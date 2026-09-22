@@ -16,6 +16,7 @@ const ADD_URL =
 const WESTERN_URL =
   "https://raw.githubusercontent.com/Stellarium/stellarium-skycultures/master/western/index.json";
 const MILKYWAY_URL = "https://cdn.eso.org/images/large/eso0932a.jpg";
+const EARTH_URL = "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg";
 
 const STAR_MAG_LIMIT = 7.0;
 const DSO_MAG_LIMIT = 14.0;
@@ -224,6 +225,15 @@ async function downloadMilkyWay() {
   return { bytes: buf.length, url: MILKYWAY_URL };
 }
 
+async function downloadEarth() {
+  const res = await fetch(EARTH_URL);
+  if (!res.ok) throw new Error(`Earth map fallita: ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length < 50_000) throw new Error("Earth map troppo piccola, download corrotto");
+  writeFileSync(join(OUT_SURVEY, "earth.jpg"), buf);
+  return { bytes: buf.length, url: EARTH_URL };
+}
+
 async function downloadAllSky() {
   const url = "https://alasky.cds.unistra.fr/hips-image-services/hips2fits?hips=CDS%2FP%2FDSS2%2Fcolor&width=2048&height=1024&ra=180&dec=0&fov=360&projection=CAR&coordsys=icrs&format=jpg";
   const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
@@ -249,6 +259,9 @@ async function main() {
   console.log("Download ESO Milky Way...");
   const mw = await downloadMilkyWay();
   console.log(`Milky Way: ${(mw.bytes / 1048576).toFixed(1)} MB`);
+  console.log("Download Earth map...");
+  const earth = await downloadEarth();
+  console.log(`Earth: ${(earth.bytes / 1048576).toFixed(1)} MB`);
   const dss2 = await downloadAllSky();
   writeFileSync(join(OUT_DATA, "stars.json"), JSON.stringify(stars));
   writeFileSync(join(OUT_DATA, "dso.json"), JSON.stringify(dso));
@@ -267,6 +280,7 @@ async function main() {
           dso: { url: NGC_URL, license: "OpenNGC CC-BY-SA-4.0, Mattia Verga" },
           constellations: { url: WESTERN_URL, license: "Stellarium GPL-2.0, IAU western" },
           milkyway: { url: mw.url, license: "ESO/S. Brunier CC BY 4.0, eso0932a" },
+          earth: { url: earth.url, license: "NASA Visible Earth Blue Marble via three-globe" },
         },
       },
       null,

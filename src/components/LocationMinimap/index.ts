@@ -1,0 +1,1 @@
+export { LocationMinimap } from "./LocationMinimap";

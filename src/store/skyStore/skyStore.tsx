@@ -102,7 +102,7 @@ export function SkyStoreProvider({ children }: { children: ReactNode }) {
         ...prev,
         observer: { ...prev.observer, dateIso: new Date().toISOString() },
       }));
-    }, 30000);
+    }, 1000);
     return () => window.clearInterval(timer);
   }, [sky.observer.live]);
 

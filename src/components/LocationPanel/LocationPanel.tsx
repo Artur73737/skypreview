@@ -1,30 +1,22 @@
+import { CitySearch } from "../CitySearch";
+import { LocationMinimap } from "../LocationMinimap";
 import { useObserver } from "../../hooks/useObserver";
 import { useSkyStore } from "../../store/skyStore";
 import { formatLatLon } from "../../utils/format";
-
-const CITIES = [
-  { name: "Milano", lat: 45.4642, lon: 9.19 },
-  { name: "Roma", lat: 41.9028, lon: 12.4964 },
-  { name: "Napoli", lat: 40.8518, lon: 14.2681 },
-  { name: "Torino", lat: 45.0703, lon: 7.6869 },
-  { name: "Palermo", lat: 38.1157, lon: 13.3615 },
-  { name: "Paranal", lat: -24.6272, lon: -70.4044 },
-];
 
 export function LocationPanel() {
   const { sky, update } = useSkyStore();
   const obs = sky.observer;
   const info = useObserver(obs.latDeg, obs.lonDegEast, obs.dateIso);
+  const setPos = (latDeg: number, lonDegEast: number) =>
+    update({ observer: { ...obs, latDeg, lonDegEast } });
   const geolocate = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => {
-      update({
-        observer: {
-          ...obs,
-          latDeg: Math.round(pos.coords.latitude * 100) / 100,
-          lonDegEast: Math.round(pos.coords.longitude * 100) / 100,
-        },
-      });
+      setPos(
+        Math.round(pos.coords.latitude * 100) / 100,
+        Math.round(pos.coords.longitude * 100) / 100,
+      );
     });
   };
   return (
@@ -32,6 +24,10 @@ export function LocationPanel() {
       <div style={{ fontSize: 13, color: "#e2e8f0" }}>
         {formatLatLon(obs.latDeg, obs.lonDegEast)} · LST {info.lstHours.toFixed(2)}h
       </div>
+      <CitySearch
+        onPick={(city) => setPos(city.latDeg, city.lonDegEast)}
+      />
+      <LocationMinimap latDeg={obs.latDeg} lonDegEast={obs.lonDegEast} onPick={setPos} />
       <div style={{ display: "flex", gap: 8 }}>
         <label style={field}>
           Lat
@@ -44,15 +40,7 @@ export function LocationPanel() {
             onChange={(e) => update({ observer: { ...obs, lonDegEast: Number(e.target.value) } })} />
         </label>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {CITIES.map((c) => (
-          <button key={c.name} style={chip}
-            onClick={() => update({ observer: { ...obs, latDeg: c.lat, lonDegEast: c.lon } })}>
-            {c.name}
-          </button>
-        ))}
-        <button style={chip} onClick={geolocate}>La mia posizione</button>
-      </div>
+      <button style={chip} onClick={geolocate}>La mia posizione</button>
       <label style={field}>
         Data e ora
         <input type="datetime-local" style={input}
@@ -70,7 +58,7 @@ export function LocationPanel() {
               dateIso: new Date().toISOString(),
             },
           })} />
-        Tempo reale
+        Tempo reale dal PC
       </label>
     </div>
   );
@@ -83,5 +71,5 @@ const input: React.CSSProperties = {
 };
 const chip: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.06)",
-  color: "#f1f5f9", borderRadius: 999, padding: "4px 10px", fontSize: 12, cursor: "pointer",
+  color: "#f1f5f9", borderRadius: 999, padding: "6px 10px", fontSize: 12, cursor: "pointer",
 };

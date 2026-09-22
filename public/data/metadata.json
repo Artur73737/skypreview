@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T10:44:36.603Z",
+  "generatedAt": "2026-09-22T11:13:17.695Z",
   "starMagLimit": 7,
   "dsoMagLimit": 14,
   "counts": {
@@ -8,6 +8,10 @@
     "constellations": 88
   },
   "sources": {
+    "dss2": {
+      "url": "https://alasky.cds.unistra.fr/hips-image-services/hips2fits?hips=CDS%2FP%2FDSS2%2Fcolor&width=2048&height=1024&ra=180&dec=0&fov=360&projection=CAR&coordsys=icrs&format=jpg",
+      "license": "DSS2 / STScI, HiPS2FITS CDS Strasbourg"
+    },
     "stars": {
       "url": "https://raw.githubusercontent.com/kiloquad/__HYG-Database/master/hygdata_v3.csv",
       "license": "HYG DB (Hipparcos+Yale+Gliese), uso con attribuzione"
@@ -24,10 +28,9 @@
       "url": "https://cdn.eso.org/images/large/eso0932a.jpg",
       "license": "ESO/S. Brunier CC BY 4.0, eso0932a"
     },
-    "dss2": {
-      "url": "https://alasky.cds.unistra.fr/hips-image-services/hips2fits",
-      "license": "DSS2 / STScI, HiPS2FITS CDS Strasbourg",
-      "projection": "CAR, RA 180 deg, Dec 0 deg, 360 x 180 deg"
+    "earth": {
+      "url": "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg",
+      "license": "NASA Visible Earth Blue Marble via three-globe"
     }
   }
 }
