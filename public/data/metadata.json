@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-09-22T10:44:36.603Z",
+  "starMagLimit": 7,
+  "dsoMagLimit": 14,
+  "counts": {
+    "stars": 15588,
+    "dso": 5047,
+    "constellations": 88
+  },
+  "sources": {
+    "stars": {
+      "url": "https://raw.githubusercontent.com/kiloquad/__HYG-Database/master/hygdata_v3.csv",
+      "license": "HYG DB (Hipparcos+Yale+Gliese), uso con attribuzione"
+    },
+    "dso": {
+      "url": "https://raw.githubusercontent.com/mattiaverga/OpenNGC/master/database_files/NGC.csv",
+      "license": "OpenNGC CC-BY-SA-4.0, Mattia Verga"
+    },
+    "constellations": {
+      "url": "https://raw.githubusercontent.com/Stellarium/stellarium-skycultures/master/western/index.json",
+      "license": "Stellarium GPL-2.0, IAU western"
+    },
+    "milkyway": {
+      "url": "https://cdn.eso.org/images/large/eso0932a.jpg",
+      "license": "ESO/S. Brunier CC BY 4.0, eso0932a"
+    },
+    "dss2": {
+      "url": "https://alasky.cds.unistra.fr/hips-image-services/hips2fits",
+      "license": "DSS2 / STScI, HiPS2FITS CDS Strasbourg",
+      "projection": "CAR, RA 180 deg, Dec 0 deg, 360 x 180 deg"
+    }
+  }
+}
