@@ -55,7 +55,8 @@ export function SkyView() {
 
   // Cover the viewport diagonal, including rotation into equatorial north-up.
   const surveyFov = 2 * Math.atan(Math.tan(sky.fovDeg * Math.PI / 360) * Math.hypot(size.w / size.h, 1)) * 180 / Math.PI;
-  const hips = useHipsBackground(sky.showBackground, centerEq.raHours * 15, centerEq.decDeg, surveyFov, sky.hdPhotos);
+  const round10 = (v: number) => Math.round(v * 10) / 10;
+  const hips = useHipsBackground(sky.showBackground, round10(centerEq.raHours * 15), round10(centerEq.decDeg), round10(surveyFov), sky.hdPhotos);
   const horizontal = useMemo(() => {
     const convert = (ra: number, dec: number) => raDecToAltAz(ra, dec, observer.latDeg, observer.lonDegEast, observer.date);
     return {
