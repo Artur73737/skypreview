@@ -27,7 +27,7 @@ export function getHipsCutoutUrl(
     height: String(sizePx),
     projection: "TAN",
     coordsys: "icrs",
-    format: "jpg",
+    format: "png",
     stretch: "asinh",
     min_cut: "0.5%",
     max_cut: "99.5%",

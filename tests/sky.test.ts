@@ -73,6 +73,8 @@ describe("survey astrometry and custom optics", () => {
     expect(wcs.CRVAL1).toBeCloseTo(10.6848, 10);
     expect(wcs.CDELT1 * 1536 * Math.PI / 180).toBeCloseTo(-2*Math.tan(Math.PI/3),8);
     expect(wcs.CRPIX1).toBe(768.5);
+      expect(new URL(high.url).searchParams.get("format")).toBe("png");
+      expect(new URL(high.url).searchParams.get("stretch")).toBe("asinh");
   });
   it("computes non-preset focal lengths with reducers and large sensors", () => {
     const f=computeFov(873.5,132.7,0.73,12000,8000,3.45);

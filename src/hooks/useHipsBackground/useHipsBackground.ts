@@ -10,11 +10,9 @@ export interface HipsBackground {
   fovDeg: number;
 }
 
-function stepsForFov(fovDeg: number, hd: boolean): number[] {
-  if (!hd) return [512];
-  if (fovDeg > 40) return [1024, 2048];
-  if (fovDeg > 12) return [1024, 3072];
-  return [1024, 4096];
+function resolutionForView(hd: boolean): number {
+  // Never expose an intermediate low-resolution image. A view is either empty/loading or final.
+  return hd ? 4096 : 1024;
 }
 
 export function useHipsBackground(
@@ -42,20 +40,11 @@ export function useHipsBackground(
     const timer = window.setTimeout(async () => {
       setState((s) => ({ ...s, loading: true, error: null }));
       try {
-        const steps = stepsForFov(fovDeg, hd);
-        for (const resolution of steps) {
-          const cutout = getHipsCutoutUrl(raDeg, decDeg, fovDeg, resolution);
-          const img = await loadHipsImage(cutout, controller.signal);
-          if (controller.signal.aborted) return;
-          setState({
-            img,
-            loading: resolution !== steps[steps.length - 1],
-            error: null,
-            raDeg,
-            decDeg,
-            fovDeg: cutout.fovDeg,
-          });
-        }
+        const resolution = resolutionForView(hd);
+        const cutout = getHipsCutoutUrl(raDeg, decDeg, fovDeg, resolution);
+        const img = await loadHipsImage(cutout, controller.signal);
+        if (controller.signal.aborted) return;
+        setState({ img, loading: false, error: null, raDeg, decDeg, fovDeg: cutout.fovDeg });
       } catch {
         if (!controller.signal.aborted) {
           setState((s) => ({
