@@ -10,7 +10,7 @@ export function ObjectDetail() {
   const sel = sky.selected;
   const extent = sel?.kind === "dso" ? ((sel.ref as DsoEntry).sizeArcmin[0] ?? 20) / 60 : 0.5;
   const field = Math.max(0.25, extent * 1.5);
-  const photo = useHipsBackground(Boolean(sel), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field, false);
+  const photo = useHipsBackground(Boolean(sel), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field);
   if (!sel) return <p style={hint}>Clicca un oggetto nel cielo o cercalo.</p>;
   const raDeg = sel.raHours * 15;
 
