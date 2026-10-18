@@ -9,3 +9,4 @@ Thumbs.db
 .idea/
 *.log
 npm-debug.log*
+public/surveys/pack/

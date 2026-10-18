@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getHipsCutoutUrl, loadHipsImage } from "../../services/hips";
+import { findLocalSkyCutout, getHipsCutoutUrl, loadHipsImage } from "../../services/hips";
 
 export interface HipsBackground {
   img: HTMLImageElement | null;
@@ -40,7 +40,8 @@ export function useHipsBackground(
       setState((s) => ({ ...s, loading: true, error: null }));
       try {
         const resolution = resolutionForView();
-        const cutout = getHipsCutoutUrl(raDeg, decDeg, fovDeg, resolution);
+        const requested = getHipsCutoutUrl(raDeg, decDeg, fovDeg, resolution);
+        const cutout = (await findLocalSkyCutout(requested)) ?? requested;
         const img = await loadHipsImage(cutout, controller.signal);
         if (controller.signal.aborted) return;
         setState({ img, loading: false, error: null, raDeg, decDeg, fovDeg: cutout.fovDeg });

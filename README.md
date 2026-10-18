@@ -13,6 +13,7 @@ real telescope field-of-view math. No mock data.
 - Floating dock: object search, layers and grids, telescope and Barlow setup, camera setup, field of view, location
 - Telescope FOV calculator from focal length, aperture, Barlow, sensor resolution and pixel size, with a draggable overlay on the sky
 - DSS2 cutout preview for the selected object with a link to Aladin Lite
+- GitHub Actions sky pack: the Pages build downloads and embeds 60°, 30° and 15° DSS2 tiles locally, with an artifact cache to avoid downloading unchanged tiles again
 
 ## Quickstart
 
@@ -21,6 +22,7 @@ Requirements: Node.js 20+.
 ```bash
 npm install
 npm run download:data
+npm run download:sky-pack
 npm run dev
 ```
 
@@ -73,4 +75,4 @@ src/store/skyStore            shared UI and observer state
 ## Deploy
 
 Pushing to `main` deploys to GitHub Pages through `.github/workflows/deploy.yml`.
-The build uses relative asset paths, so any Pages URL works.
+The workflow downloads a static DSS2 sky pack into the Pages artifact. The browser uses those local tiles first and only asks HiPS2FITS for a view outside the generated pack. The build uses relative asset paths, so any Pages URL works.

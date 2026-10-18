@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  sky-pack:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +23,36 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: public/surveys/pack
+          key: sky-pack-v1-${{ runner.os }}-${{ hashFiles('scripts/download-sky-pack.mjs') }}
       - run: npm ci
+      - run: npm run download:sky-pack
+        env:
+          SKY_PACK_CONCURRENCY: 8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sky-pack
+          path: public/surveys/pack
+          compression-level: 0
+          retention-days: 7
+
+  build:
+    needs: sky-pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/download-artifact@v4
+        with:
+          name: sky-pack
+          path: public/surveys/pack
+      - run: npm ci
+      - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

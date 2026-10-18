@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "download:data": "node scripts/download-data.mjs",
+    "download:sky-pack": "node scripts/download-sky-pack.mjs",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest run"
