@@ -57,9 +57,10 @@ describe("spherical projections", () => {
 
 describe("survey astrometry and custom optics", () => {
   it("ships the requested quick-pick catalogs", () => {
-    expect(CAMERA_PRESETS).toHaveLength(25);
+    expect(CAMERA_PRESETS).toHaveLength(26);
     expect(CAMERA_PRESETS.find(c => c.name === "ASI2600MC Pro")?.pixelUm).toBe(3.76);
     expect(CAMERA_PRESETS.find(c => c.name === "SV605MC")?.resXpx).toBe(3008);
+    expect(CAMERA_PRESETS.find(c => c.name === "Canon EOS 1100D")?.resXpx).toBe(4272);
     expect(TELESCOPE_PRESETS).toHaveLength(22);
     expect(TELESCOPE_PRESETS.find(t => t.name === "Askar 71F")?.resolutionArcsec).toBeCloseTo(1.64);
     expect(TELESCOPE_PRESETS.find(t => t.name === "Celestron C11 / EdgeHD 11")?.focalMm).toBe(2800);
@@ -73,7 +74,7 @@ describe("survey astrometry and custom optics", () => {
     expect(wcs.CRVAL1).toBeCloseTo(10.6848, 10);
     expect(wcs.CDELT1 * 1536 * Math.PI / 180).toBeCloseTo(-2*Math.tan(Math.PI/3),8);
     expect(wcs.CRPIX1).toBe(768.5);
-      expect(new URL(high.url).searchParams.get("format")).toBe("png");
+      expect(new URL(high.url).searchParams.get("format")).toBe("jpg");
       expect(new URL(high.url).searchParams.get("stretch")).toBe("asinh");
   });
   it("computes non-preset focal lengths with reducers and large sensors", () => {

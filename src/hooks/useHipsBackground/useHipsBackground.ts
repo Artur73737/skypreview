@@ -12,7 +12,7 @@ export interface HipsBackground {
 
 function resolutionForView(): number {
   // Always request the final texture. There is no low-resolution fallback.
-  return 4096;
+  return 2048;
 }
 
 export function useHipsBackground(

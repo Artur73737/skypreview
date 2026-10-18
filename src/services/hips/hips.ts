@@ -27,7 +27,9 @@ export function getHipsCutoutUrl(
     height: String(sizePx),
     projection: "TAN",
     coordsys: "icrs",
-    format: "png",
+    // DSS2 PNG generation at 4096 can exceed the service timeout; 2048 JPEG is the
+    // largest reliably served cutout and is still sampled at native texture pixels.
+    format: "jpg",
     stretch: "asinh",
     min_cut: "0.5%",
     max_cut: "99.5%",
@@ -45,7 +47,7 @@ export async function loadHipsImage(cutout: HipsCutout, signal?: AbortSignal): P
   for (const host of ["alasky.cds.unistra.fr", "alaskybis.cds.unistra.fr"]) {
     try {
       const response = await fetch(cutout.url.replace("alasky.cds.unistra.fr", host), {
-        signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(25000)]),
+        signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(35000)]),
       });
       if (!response.ok) throw new Error(`DSS2: HTTP ${response.status}`);
       const blob = await response.blob();
