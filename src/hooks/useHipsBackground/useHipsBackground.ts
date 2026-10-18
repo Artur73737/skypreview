@@ -10,9 +10,9 @@ export interface HipsBackground {
   fovDeg: number;
 }
 
-function resolutionForView(hd: boolean): number {
-  // Never expose an intermediate low-resolution image. A view is either empty/loading or final.
-  return hd ? 4096 : 1024;
+function resolutionForView(): number {
+  // Always request the final texture. There is no low-resolution fallback.
+  return 4096;
 }
 
 export function useHipsBackground(
@@ -20,7 +20,6 @@ export function useHipsBackground(
   raDeg: number,
   decDeg: number,
   fovDeg: number,
-  hd = true,
 ) {
   const [retry, setRetry] = useState(0);
   const [state, setState] = useState<HipsBackground>({
@@ -40,7 +39,7 @@ export function useHipsBackground(
     const timer = window.setTimeout(async () => {
       setState((s) => ({ ...s, loading: true, error: null }));
       try {
-        const resolution = resolutionForView(hd);
+        const resolution = resolutionForView();
         const cutout = getHipsCutoutUrl(raDeg, decDeg, fovDeg, resolution);
         const img = await loadHipsImage(cutout, controller.signal);
         if (controller.signal.aborted) return;
@@ -59,6 +58,6 @@ export function useHipsBackground(
       clearTimeout(timer);
       controller.abort();
     };
-  }, [enabled, raDeg, decDeg, fovDeg, hd, retry]);
+  }, [enabled, raDeg, decDeg, fovDeg, retry]);
   return { ...state, retry: () => setRetry((n) => n + 1) };
 }

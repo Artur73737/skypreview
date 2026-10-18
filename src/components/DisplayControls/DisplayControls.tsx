@@ -1,7 +1,6 @@
 import { useSkyStore } from "../../store/skyStore";
 
 const ROWS: { key: "showStars" | "showEqGrid" | "showAzGrid" | "showConstellations" | "showStarNames" | "showDso" | "showDsoNames" | "showCardinal" | "showHorizon" | "showBackground" | "hdPhotos"; label: string }[] = [
-  { key: "hdPhotos", label: "Dettagli fotografici HD" },
   { key: "showBackground", label: "Fotografie DSS2 (tutto il cielo)" },
   { key: "showEqGrid", label: "Griglia equatoriale" },
   { key: "showAzGrid", label: "Griglia altazimutale" },
