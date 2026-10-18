@@ -8,12 +8,14 @@ export interface ObserverState {
 }
 
 export interface OpticsState {
+  model: string;
   focalMm: number;
   apertureMm: number;
   barlow: number;
 }
 
 export interface CameraState {
+  model: string;
   resXpx: number;
   resYpx: number;
   pixelUm: number;

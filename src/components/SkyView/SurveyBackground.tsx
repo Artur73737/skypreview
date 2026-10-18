@@ -9,14 +9,14 @@ varying vec2 screen;
 uniform vec3 forward, right, up, eqX, eqY, eqZ;
 uniform float aspect, tangent, patchTangent, hasPatch;
 uniform vec3 patchCenter, patchEast, patchNorth;
-uniform sampler2D allsky, patch;
+uniform sampler2D patch;
 const float PI=3.141592653589793;
 void main(){
  vec3 world=normalize(forward+tangent*(screen.x*aspect*right+screen.y*up));
  vec3 eq=vec3(dot(world,eqX),dot(world,eqY),dot(world,eqZ));
  float ra=atan(eq.y,eq.x); if(ra<0.) ra+=2.*PI;
  float dec=asin(clamp(eq.z,-1.,1.));
- vec4 color=texture2D(allsky,vec2(1.-ra/(2.*PI),.5+dec/PI));
+ vec4 color=vec4(2./255.,4./255.,9./255.,1.);
  float z=dot(eq,patchCenter);
  if(hasPatch>.5 && z>0.){
   vec2 uv=vec2(.5-dot(eq,patchEast)/(2.*z*patchTangent),.5+dot(eq,patchNorth)/(2.*z*patchTangent));
@@ -28,8 +28,7 @@ void main(){
 interface Props { basis: ViewBasis; fov: number; width: number; height: number; lat: number; lon: number; date: Date; hips: HipsBackground }
 export function SurveyBackground(props: Props) {
  const ref=useRef<HTMLCanvasElement>(null);
- const renderer=useRef<{gl: WebGLRenderingContext; program: WebGLProgram; base: WebGLTexture; patch: WebGLTexture; image: HTMLImageElement | null} | null>(null);
- const [ready,setReady]=useState(false);
+ const renderer=useRef<{gl: WebGLRenderingContext; program: WebGLProgram; patch: WebGLTexture; image: HTMLImageElement | null} | null>(null);
  const [error,setError]=useState(false);
  useEffect(()=>{
   const gl=ref.current?.getContext("webgl",{alpha:false,antialias:false});
@@ -42,14 +41,10 @@ export function SurveyBackground(props: Props) {
   gl.useProgram(program);
   const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
   const location=gl.getAttribLocation(program,"position");gl.enableVertexAttribArray(location);gl.vertexAttribPointer(location,2,gl.FLOAT,false,0,0);
-  const texture=(unit:number)=>{gl.activeTexture(gl.TEXTURE0+unit);const t=gl.createTexture()!;gl.bindTexture(gl.TEXTURE_2D,t);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([3,5,9,255]));return t;};
-  const base=texture(0), patch=texture(1);
-  gl.uniform1i(gl.getUniformLocation(program,"allsky"),0);gl.uniform1i(gl.getUniformLocation(program,"patch"),1);
-  renderer.current={gl,program,base,patch,image:null};
-  const img=new Image();
-  img.onload=()=>{gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,base);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);setReady(true);};
-  img.onerror=()=>setError(true);img.src=`${import.meta.env.BASE_URL}surveys/dss2-allsky.jpg`;
-  return()=>{img.onload=null;img.onerror=null;gl.deleteTexture(base);gl.deleteTexture(patch);gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);renderer.current=null;};
+  const patch=gl.createTexture()!; gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,patch); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([2,4,9,255]));
+  gl.uniform1i(gl.getUniformLocation(program,"patch"),1);
+  renderer.current={gl,program,patch,image:null};
+  return()=>{gl.deleteTexture(patch);gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);renderer.current=null;};
  },[]);
  useEffect(()=>{
   const r=renderer.current;if(!r)return;
@@ -66,6 +61,6 @@ export function SurveyBackground(props: Props) {
   f("patchTangent",Math.tan(hips.fovDeg*Math.PI/360));
   if(hips.img && hips.img!==r.image){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,r.patch);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,hips.img);r.image=hips.img;}
   gl.drawArrays(gl.TRIANGLES,0,6);
- },[props,ready]);
- return <><canvas aria-label="Fotografia del cielo DSS2" ref={ref} width={props.width} height={props.height} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>{error && <div className="hd-loading" role="alert">Sfondo fotografico non disponibile: verifica WebGL e i file della mappa.</div>}</>;
+ },[props]);
+ return <><canvas aria-label="Fotografia del cielo DSS2" ref={ref} width={props.width} height={props.height} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>{error && <div className="hd-loading" role="alert">Sfondo fotografico non disponibile: verifica WebGL.</div>}</>;
 }

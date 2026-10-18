@@ -11,10 +11,10 @@ export interface HipsBackground {
 }
 
 function stepsForFov(fovDeg: number, hd: boolean): number[] {
-  if (!hd) return [384];
-  if (fovDeg > 40) return [384];
-  if (fovDeg > 12) return [384, 768];
-  return [384, 1024];
+  if (!hd) return [512];
+  if (fovDeg > 40) return [1024, 2048];
+  if (fovDeg > 12) return [1024, 3072];
+  return [1024, 4096];
 }
 
 export function useHipsBackground(
@@ -61,7 +61,7 @@ export function useHipsBackground(
           setState((s) => ({
             ...s,
             loading: false,
-            error: "Dettaglio DSS2 non disponibile. La mappa di base resta visibile.",
+            error: "Texture DSS2 non disponibile per questa vista. Riprova per caricarla in alta risoluzione.",
           }));
         }
       }

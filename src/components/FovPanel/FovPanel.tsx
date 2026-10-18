@@ -12,6 +12,7 @@ export function FovPanel() {
     sky.camera.resYpx,
     sky.camera.pixelUm,
   );
+  const theoreticalResolution = 116 / sky.optics.apertureMm;
   const addToView = () => {
     const date = new Date(sky.observer.dateIso);
     const eq = altAzToRaDec(
@@ -38,11 +39,13 @@ export function FovPanel() {
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={caption}>{sky.optics.model} + {sky.camera.model}</div>
       <div style={grid}>
         <Stat label="Larghezza" value={`${fov.widthDeg.toFixed(2)}°`} />
         <Stat label="Altezza" value={`${fov.heightDeg.toFixed(2)}°`} />
         <Stat label="Diagonale" value={`${fov.diagonalDeg.toFixed(2)}°`} />
         <Stat label="Campionamento" value={`${fov.samplingArcsecPx.toFixed(2)}″/px`} />
+        <Stat label="Risoluzione teorica" value={`${theoreticalResolution.toFixed(2)}″`} />
       </div>
       <button style={primary} onClick={addToView}>
         Add to view
@@ -86,3 +89,4 @@ const row: React.CSSProperties = {
   fontSize: 12, color: "#e2e8f0",
 };
 const hint: React.CSSProperties = { color: "#94a3b8", fontSize: 12, margin: 0 };
+const caption: React.CSSProperties = { color: "#e2e8f0", fontSize: 12, margin: "0 0 2px" };

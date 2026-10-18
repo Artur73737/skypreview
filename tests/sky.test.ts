@@ -5,6 +5,7 @@ import { basisForView, projectAltAz, unprojectToAltAz } from "../src/services/vi
 import { getHipsCutoutUrl } from "../src/services/hips";
 import { computeFov } from "../src/services/fov";
 import { searchCatalogs, type CatalogBundle } from "../src/services/catalog";
+import { CAMERA_PRESETS, TELESCOPE_PRESETS } from "../src/data/equipment";
 
 const read = (name: string) => JSON.parse(readFileSync(new URL(`../public/data/${name}.json`, import.meta.url), "utf8"));
 const bundle: CatalogBundle = { stars: read("stars"), dso: read("dso"), constellations: read("constellations") };
@@ -55,6 +56,14 @@ describe("spherical projections", () => {
 });
 
 describe("survey astrometry and custom optics", () => {
+  it("ships the requested quick-pick catalogs", () => {
+    expect(CAMERA_PRESETS).toHaveLength(25);
+    expect(CAMERA_PRESETS.find(c => c.name === "ASI2600MC Pro")?.pixelUm).toBe(3.76);
+    expect(CAMERA_PRESETS.find(c => c.name === "SV605MC")?.resXpx).toBe(3008);
+    expect(TELESCOPE_PRESETS).toHaveLength(22);
+    expect(TELESCOPE_PRESETS.find(t => t.name === "Askar 71F")?.resolutionArcsec).toBeCloseTo(1.64);
+    expect(TELESCOPE_PRESETS.find(t => t.name === "Celestron C11 / EdgeHD 11")?.focalMm).toBe(2800);
+  });
   it("uses exact TAN scale, full wide fields, and resolution-aware cache keys", () => {
     const low=getHipsCutoutUrl(10.6848,41.2691,120,384);
     const high=getHipsCutoutUrl(10.6848,41.2691,120,1536);
