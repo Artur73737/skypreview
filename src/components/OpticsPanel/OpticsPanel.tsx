@@ -6,7 +6,21 @@ export function OpticsPanel() {
   const { sky, update } = useSkyStore(); const optics = sky.optics; const [query, setQuery] = useState("");
   const filtered = useMemo(() => TELESCOPE_PRESETS.filter(t => `${t.brand} ${t.name} ${t.type}`.toLowerCase().includes(query.toLowerCase())), [query]);
   const set = (patch: Partial<typeof optics>) => update({ optics: { ...optics, ...patch } });
-  const choose = (p: TelescopePreset) => set({ model: p.name, focalMm: p.focalMm, apertureMm: p.apertureMm });
+  const choose = (p: TelescopePreset) => {
+    const camera = p.integratedCamera;
+    update({
+      optics: {
+        ...optics,
+        model: p.name,
+        focalMm: p.focalMm,
+        apertureMm: p.apertureMm,
+        barlow: camera ? 1 : optics.barlow,
+      },
+      ...(camera
+        ? { camera: { model: camera.model, resXpx: camera.resXpx, resYpx: camera.resYpx, pixelUm: camera.pixelUm } }
+        : {}),
+    });
+  };
   const eff = optics.focalMm * optics.barlow;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={sectionTitle}>Picker rapido · {TELESCOPE_PRESETS.length} telescopi</div>
@@ -14,7 +28,7 @@ export function OpticsPanel() {
     <div style={pickerList} role="listbox" aria-label="Preset telescopi">
       {filtered.map(p => <button key={p.id} onClick={() => choose(p)} style={pickerRow(optics.model === p.name)}>
         <span><b>{p.name}</b> <small>{p.brand}</small></span>
-        <span>{p.apertureMm} mm · {p.focalMm} mm · {p.focalRatio} · {p.resolutionArcsec.toFixed(2)}″</span>
+        <span>{p.apertureMm} mm · {p.focalMm} mm · {p.focalRatio} · {p.resolutionArcsec.toFixed(2)}″{p.integratedCamera ? " · camera integrata" : ""}</span>
       </button>)}
     </div>
     <div style={sectionTitle}>Parametri personalizzati · {optics.model}</div>

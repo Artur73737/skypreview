@@ -234,16 +234,6 @@ async function downloadEarth() {
   return { bytes: buf.length, url: EARTH_URL };
 }
 
-async function downloadAllSky() {
-  const url = "https://alasky.cds.unistra.fr/hips-image-services/hips2fits?hips=CDS%2FP%2FDSS2%2Fcolor&width=2048&height=1024&ra=180&dec=0&fov=360&projection=CAR&coordsys=icrs&format=jpg";
-  const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
-  if (!res.ok) throw new Error(`DSS2 all-sky: ${res.status}`);
-  const buffer = Buffer.from(await res.arrayBuffer());
-  if (buffer[0] !== 0xff || buffer[1] !== 0xd8) throw new Error("DSS2 all-sky: JPEG non valido");
-  writeFileSync(join(OUT_SURVEY, "dss2-allsky.jpg"), buffer);
-  return { url, license: "DSS2 / STScI, HiPS2FITS CDS Strasbourg" };
-}
-
 async function main() {
   mkdirSync(OUT_DATA, { recursive: true });
   mkdirSync(OUT_SURVEY, { recursive: true });
@@ -262,7 +252,6 @@ async function main() {
   console.log("Download Earth map...");
   const earth = await downloadEarth();
   console.log(`Earth: ${(earth.bytes / 1048576).toFixed(1)} MB`);
-  const dss2 = await downloadAllSky();
   writeFileSync(join(OUT_DATA, "stars.json"), JSON.stringify(stars));
   writeFileSync(join(OUT_DATA, "dso.json"), JSON.stringify(dso));
   writeFileSync(join(OUT_DATA, "constellations.json"), JSON.stringify(constellations));
@@ -275,7 +264,6 @@ async function main() {
         dsoMagLimit: DSO_MAG_LIMIT,
         counts: { stars: stars.length, dso: dso.length, constellations: constellations.length },
         sources: {
-          dss2,
           stars: { url: HYG_URL, license: "HYG DB (Hipparcos+Yale+Gliese), uso con attribuzione" },
           dso: { url: NGC_URL, license: "OpenNGC CC-BY-SA-4.0, Mattia Verga" },
           constellations: { url: WESTERN_URL, license: "Stellarium GPL-2.0, IAU western" },

@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
-import { findLocalSkyCutout, getHipsCutoutUrl, loadHipsImage } from "../../services/hips";
+import {
+  findLocalSkyCutout,
+  getHipsCutout,
+  loadHipsImage,
+  loadHipsTexture,
+} from "../../services/hips";
 
 export interface HipsBackground {
-  img: HTMLImageElement | null;
+  img: HTMLImageElement | HTMLCanvasElement | null;
   loading: boolean;
   error: string | null;
   raDeg: number;
@@ -10,16 +15,12 @@ export interface HipsBackground {
   fovDeg: number;
 }
 
-function resolutionForView(): number {
-  // Always request the final texture. There is no low-resolution fallback.
-  return 2048;
-}
-
 export function useHipsBackground(
   enabled: boolean,
   raDeg: number,
   decDeg: number,
   fovDeg: number,
+  sizePx = 2048,
 ) {
   const [retry, setRetry] = useState(0);
   const [state, setState] = useState<HipsBackground>({
@@ -39,18 +40,37 @@ export function useHipsBackground(
     const timer = window.setTimeout(async () => {
       setState((s) => ({ ...s, loading: true, error: null }));
       try {
-        const resolution = resolutionForView();
-        const requested = getHipsCutoutUrl(raDeg, decDeg, fovDeg, resolution);
-        const cutout = (await findLocalSkyCutout(requested)) ?? requested;
-        const img = await loadHipsImage(cutout, controller.signal);
+        const requested = getHipsCutout(raDeg, decDeg, fovDeg, sizePx);
+        let img: HTMLImageElement | HTMLCanvasElement | null = null;
+        let cutout = requested;
+
+        const local = await findLocalSkyCutout(requested);
+        if (local) {
+          try {
+            img = await loadHipsImage(local, controller.signal);
+            cutout = local;
+          } catch {
+            if (controller.signal.aborted) return;
+          }
+        }
+        if (!img) img = await loadHipsTexture(requested, controller.signal);
         if (controller.signal.aborted) return;
-        setState({ img, loading: false, error: null, raDeg, decDeg, fovDeg: cutout.fovDeg });
+
+        setState({
+          img,
+          loading: false,
+          error: null,
+          raDeg: cutout.raDeg,
+          decDeg: cutout.decDeg,
+          fovDeg: cutout.fovDeg,
+        });
       } catch {
         if (!controller.signal.aborted) {
           setState((s) => ({
             ...s,
             loading: false,
-            error: "Texture DSS2 non disponibile per questa vista. Riprova per caricarla in alta risoluzione.",
+            error:
+              "Texture DSS2 non disponibile per questa vista. Riprova per caricarla in alta risoluzione.",
           }));
         }
       }
@@ -59,6 +79,6 @@ export function useHipsBackground(
       clearTimeout(timer);
       controller.abort();
     };
-  }, [enabled, raDeg, decDeg, fovDeg, retry]);
+  }, [enabled, raDeg, decDeg, fovDeg, sizePx, retry]);
   return { ...state, retry: () => setRetry((n) => n + 1) };
 }

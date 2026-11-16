@@ -10,7 +10,7 @@ export function ObjectDetail() {
   const sel = sky.selected;
   const extent = sel?.kind === "dso" ? ((sel.ref as DsoEntry).sizeArcmin[0] ?? 20) / 60 : 0.5;
   const field = Math.max(0.25, extent * 1.5);
-  const photo = useHipsBackground(Boolean(sel), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field);
+  const photo = useHipsBackground(Boolean(sel), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field, 512);
   if (!sel) return <p style={hint}>Clicca un oggetto nel cielo o cercalo.</p>;
   const raDeg = sel.raHours * 15;
 
@@ -36,7 +36,7 @@ export function ObjectDetail() {
 const hint: React.CSSProperties = { color: "#94a3b8", fontSize: 12, margin: 0 };
 const link: React.CSSProperties = { color: "#7dd3fc", fontSize: 13 };
 
-function Photo({image,label}: {image: HTMLImageElement; label: string}) {
+function Photo({image,label}: {image: HTMLImageElement | HTMLCanvasElement; label: string}) {
  const ref=useRef<HTMLCanvasElement>(null);
  useEffect(()=>{const ctx=ref.current?.getContext("2d");ctx?.drawImage(image,0,0,384,384);},[image]);
  return <canvas ref={ref} width={384} height={384} role="img" aria-label={`DSS2 di ${label}`} style={{width:"100%",borderRadius:12}}/>;

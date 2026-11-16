@@ -8,10 +8,6 @@
     "constellations": 88
   },
   "sources": {
-    "dss2": {
-      "url": "https://alasky.cds.unistra.fr/hips-image-services/hips2fits?hips=CDS%2FP%2FDSS2%2Fcolor&width=2048&height=1024&ra=180&dec=0&fov=360&projection=CAR&coordsys=icrs&format=jpg",
-      "license": "DSS2 / STScI, HiPS2FITS CDS Strasbourg"
-    },
     "stars": {
       "url": "https://raw.githubusercontent.com/kiloquad/__HYG-Database/master/hygdata_v3.csv",
       "license": "HYG DB (Hipparcos+Yale+Gliese), uso con attribuzione"

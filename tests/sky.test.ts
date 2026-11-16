@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { raDecToAltAz, altAzToRaDec, angularSeparationDeg } from "../src/services/astroMath";
 import { basisForView, projectAltAz, unprojectToAltAz } from "../src/services/viewProjection";
-import { getHipsCutoutUrl } from "../src/services/hips";
+import {
+  computeTanScaleDeg,
+  getHipsCutout,
+  healpixTileOrder,
+} from "../src/services/hips";
 import { computeFov } from "../src/services/fov";
 import { searchCatalogs, type CatalogBundle } from "../src/services/catalog";
 import { CAMERA_PRESETS, TELESCOPE_PRESETS } from "../src/data/equipment";
@@ -57,25 +61,34 @@ describe("spherical projections", () => {
 
 describe("survey astrometry and custom optics", () => {
   it("ships the requested quick-pick catalogs", () => {
-    expect(CAMERA_PRESETS).toHaveLength(26);
+    expect(CAMERA_PRESETS).toHaveLength(27);
     expect(CAMERA_PRESETS.find(c => c.name === "ASI2600MC Pro")?.pixelUm).toBe(3.76);
     expect(CAMERA_PRESETS.find(c => c.name === "SV605MC")?.resXpx).toBe(3008);
     expect(CAMERA_PRESETS.find(c => c.name === "Canon EOS 1100D")?.resXpx).toBe(4272);
-    expect(TELESCOPE_PRESETS).toHaveLength(22);
+    expect(CAMERA_PRESETS.find(c => c.name === "Seestar S30 Plus · SC485SL")?.pixelUm).toBe(2.9);
+    expect(TELESCOPE_PRESETS).toHaveLength(23);
     expect(TELESCOPE_PRESETS.find(t => t.name === "Askar 71F")?.resolutionArcsec).toBeCloseTo(1.64);
     expect(TELESCOPE_PRESETS.find(t => t.name === "Celestron C11 / EdgeHD 11")?.focalMm).toBe(2800);
+    expect(TELESCOPE_PRESETS.find(t => t.name === "Seestar S30 Plus")?.focalMm).toBe(160);
+  });
+  it("computes the Seestar S30 Plus native field of view", () => {
+    const preset = TELESCOPE_PRESETS.find(t => t.name === "Seestar S30 Plus")!;
+    const sensor = preset.integratedCamera!;
+    expect(sensor).toMatchObject({ resXpx: 2560, resYpx: 1440, pixelUm: 2.9 });
+    const f = computeFov(preset.focalMm, preset.apertureMm, 1, sensor.resXpx, sensor.resYpx, sensor.pixelUm);
+    expect(f.widthDeg).toBeCloseTo(2.658, 3);
+    expect(f.heightDeg).toBeCloseTo(1.495, 3);
+    expect(f.diagonalDeg).toBeCloseTo(3.0495, 3);
+    expect(f.samplingArcsecPx).toBeCloseTo(3.739, 2);
   });
   it("uses exact TAN scale, full wide fields, and resolution-aware cache keys", () => {
-    const low=getHipsCutoutUrl(10.6848,41.2691,120,384);
-    const high=getHipsCutoutUrl(10.6848,41.2691,120,1536);
+    const low=getHipsCutout(10.6848,41.2691,120,384);
+    const high=getHipsCutout(10.6848,41.2691,120,1536);
     expect(low.fovDeg).toBe(120);
     expect(low.key).not.toBe(high.key);
-    const wcs=JSON.parse(new URL(high.url).searchParams.get("wcs")!);
-    expect(wcs.CRVAL1).toBeCloseTo(10.6848, 10);
-    expect(wcs.CDELT1 * 1536 * Math.PI / 180).toBeCloseTo(-2*Math.tan(Math.PI/3),8);
-    expect(wcs.CRPIX1).toBe(768.5);
-      expect(new URL(high.url).searchParams.get("format")).toBe("jpg");
-      expect(new URL(high.url).searchParams.get("stretch")).toBe("asinh");
+    expect(high.raDeg).toBeCloseTo(10.6848, 10);
+    expect(computeTanScaleDeg(120,1536)*1536*Math.PI/180).toBeCloseTo(2*Math.tan(Math.PI/3),8);
+    expect(healpixTileOrder(120,2048)).toBe(1);
   });
   it("computes non-preset focal lengths with reducers and large sensors", () => {
     const f=computeFov(873.5,132.7,0.73,12000,8000,3.45);

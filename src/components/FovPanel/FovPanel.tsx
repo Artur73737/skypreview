@@ -1,6 +1,9 @@
+import { SMART_TELESCOPE_PRESETS, type SmartTelescopePreset } from "../../data/equipment";
 import { useFovSetup } from "../../hooks/useFovSetup";
 import { altAzToRaDec } from "../../services/astroMath";
-import { useSkyStore } from "../../store/skyStore";
+import { computeFov } from "../../services/fov";
+import { useSkyStore, type FovBox } from "../../store/skyStore";
+import { QuickFovPreview } from "./QuickFovPreview";
 
 export function FovPanel() {
   const { sky, update } = useSkyStore();
@@ -13,33 +16,73 @@ export function FovPanel() {
     sky.camera.pixelUm,
   );
   const theoreticalResolution = 116 / sky.optics.apertureMm;
-  const addToView = () => {
-    const date = new Date(sky.observer.dateIso);
+  const integratedCameraModel = SMART_TELESCOPE_PRESETS.find(
+    (preset) => preset.name === sky.optics.model,
+  )?.integratedCamera.model;
+
+  const buildFovBox = (label: string, widthDeg: number, heightDeg: number): FovBox => {
     const eq = altAzToRaDec(
       sky.viewAltDeg,
       sky.viewAzDeg,
       sky.observer.latDeg,
       sky.observer.lonDegEast,
-      date,
+      new Date(sky.observer.dateIso),
     );
-    const id = `fov-${Date.now()}`;
+    return {
+      id: `fov-${Date.now()}`,
+      label,
+      raHours: eq.raHours,
+      decDeg: eq.decDeg,
+      widthDeg,
+      heightDeg,
+    };
+  };
+
+  const addToView = () =>
     update({
       fovs: [
         ...sky.fovs,
-        {
-          id,
-          label: `${sky.optics.focalMm}${sky.optics.barlow > 1 ? `×${sky.optics.barlow}` : ""}mm`,
-          raHours: eq.raHours,
-          decDeg: eq.decDeg,
-          widthDeg: fov.widthDeg,
-          heightDeg: fov.heightDeg,
-        },
+        buildFovBox(
+          `${sky.optics.focalMm}${sky.optics.barlow > 1 ? `×${sky.optics.barlow}` : ""}mm`,
+          fov.widthDeg,
+          fov.heightDeg,
+        ),
+      ],
+    });
+
+  const previewSmartTelescope = (preset: SmartTelescopePreset) => {
+    const camera = preset.integratedCamera;
+    const presetFov = computeFov(
+      preset.focalMm,
+      preset.apertureMm,
+      1,
+      camera.resXpx,
+      camera.resYpx,
+      camera.pixelUm,
+    );
+    update({
+      optics: { model: preset.name, focalMm: preset.focalMm, apertureMm: preset.apertureMm, barlow: 1 },
+      camera: {
+        model: camera.model,
+        resXpx: camera.resXpx,
+        resYpx: camera.resYpx,
+        pixelUm: camera.pixelUm,
+      },
+      fovDeg: Math.max(0.3, Math.min(sky.fovDeg, presetFov.diagonalDeg * 2.5)),
+      fovs: [
+        ...sky.fovs.filter((box) => box.label !== preset.name),
+        buildFovBox(preset.name, presetFov.widthDeg, presetFov.heightDeg),
       ],
     });
   };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={caption}>{sky.optics.model} + {sky.camera.model}</div>
+      <QuickFovPreview onPreview={previewSmartTelescope} />
+      <div style={caption}>
+        {sky.optics.model}
+        {sky.camera.model !== integratedCameraModel ? ` + ${sky.camera.model}` : ""}
+      </div>
       <div style={grid}>
         <Stat label="Larghezza" value={`${fov.widthDeg.toFixed(2)}°`} />
         <Stat label="Altezza" value={`${fov.heightDeg.toFixed(2)}°`} />
@@ -50,7 +93,7 @@ export function FovPanel() {
       <button style={primary} onClick={addToView}>
         Add to view
       </button>
-      <p style={hint}>Il rettangolo compare al centro e si trascina col mouse.</p>
+      <p style={hint}>Il rettangolo compare al centro e si trascina con il mouse o con il dito.</p>
       {sky.fovs.map((box) => (
         <div key={box.id} style={row}>
           <span>{box.label} · {box.widthDeg.toFixed(2)}°×{box.heightDeg.toFixed(2)}°</span>

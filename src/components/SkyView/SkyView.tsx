@@ -10,6 +10,7 @@ import { useObserver } from "../../hooks/useObserver";
 import { useSkyStore } from "../../store/skyStore";
 import { SurveyBackground } from "./SurveyBackground";
 import { dsoColor, starColor, starRadius } from "./skyDraw";
+import { clampFov, fovForPinch } from "./pinch";
 
 interface Layer {
   starMag: number;
@@ -37,11 +38,16 @@ function layerForFov(fov: number): Layer {
 export function SkyView() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600, dpr: 1 });
+  const [compactViewport] = useState(
+    () => window.matchMedia("(pointer: coarse), (max-width: 720px)").matches,
+  );
   const dragRef = useRef<{ mode: "look" | "fov" | null; fovId: string | null }>({
     mode: null,
     fovId: null,
   });
   const startRef = useRef<{ x: number; y: number; alt: number; az: number } | null>(null);
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const pinchRef = useRef<{ startDistance: number; startFov: number } | null>(null);
   const movedRef = useRef(false);
   const { sky, catalogs, update } = useSkyStore();
   const observer = useObserver(sky.observer.latDeg, sky.observer.lonDegEast, sky.observer.dateIso);
@@ -56,7 +62,13 @@ export function SkyView() {
   // Cover the viewport diagonal, including rotation into equatorial north-up.
   const surveyFov = 2 * Math.atan(Math.tan(sky.fovDeg * Math.PI / 360) * Math.hypot(size.w / size.h, 1)) * 180 / Math.PI;
   const round10 = (v: number) => Math.round(v * 10) / 10;
-  const hips = useHipsBackground(sky.showBackground, round10(centerEq.raHours * 15), round10(centerEq.decDeg), round10(surveyFov));
+  const hips = useHipsBackground(
+    sky.showBackground,
+    round10(centerEq.raHours * 15),
+    round10(centerEq.decDeg),
+    round10(surveyFov),
+    compactViewport ? 1024 : 2048,
+  );
   const horizontal = useMemo(() => {
     const convert = (ra: number, dec: number) => raDecToAltAz(ra, dec, observer.latDeg, observer.lonDegEast, observer.date);
     return {
@@ -384,21 +396,51 @@ export function SkyView() {
     return null;
   };
 
+  const pointerDistance = (): number => {
+    const points = Array.from(pointersRef.current.values());
+    if (points.length < 2) return 0;
+    return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+  };
+
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    const { x, y } = toLocal(e);
-    const ll = unprojectToAltAz(x, y, basis, sky.fovDeg, size.w, size.h);
-    dragRef.current = {
-      mode: pickFov(ll.altDeg, ll.azDeg) ? "fov" : "look",
-      fovId: pickFov(ll.altDeg, ll.azDeg),
-    };
-    startRef.current = { x, y, alt: sky.viewAltDeg, az: sky.viewAzDeg };
+    const point = toLocal(e);
+    pointersRef.current.set(e.pointerId, point);
+    if (pointersRef.current.size === 2) {
+      pinchRef.current = {
+        startDistance: Math.max(1, pointerDistance()),
+        startFov: sky.fovDeg,
+      };
+      dragRef.current = { mode: null, fovId: null };
+      startRef.current = null;
+      movedRef.current = true;
+      return;
+    }
+    if (pointersRef.current.size > 2) return;
+    const ll = unprojectToAltAz(point.x, point.y, basis, sky.fovDeg, size.w, size.h);
+    const fovId = pickFov(ll.altDeg, ll.azDeg);
+    dragRef.current = { mode: fovId ? "fov" : "look", fovId };
+    startRef.current = { x: point.x, y: point.y, alt: sky.viewAltDeg, az: sky.viewAzDeg };
     movedRef.current = false;
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
+    const point = toLocal(e);
+    if (pointersRef.current.has(e.pointerId)) pointersRef.current.set(e.pointerId, point);
+    if (pinchRef.current) {
+      if (pointersRef.current.size >= 2) {
+        update({
+          fovDeg: fovForPinch(
+            pinchRef.current.startFov,
+            pinchRef.current.startDistance,
+            pointerDistance(),
+          ),
+        });
+      }
+      return;
+    }
     if (!dragRef.current.mode || !startRef.current) return;
-    const { x, y } = toLocal(e);
+    const { x, y } = point;
     const dx = x - startRef.current.x;
     const dy = y - startRef.current.y;
     if (Math.abs(dx) + Math.abs(dy) > 4) movedRef.current = true;
@@ -422,11 +464,15 @@ export function SkyView() {
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
-    const wasClick = !movedRef.current;
+    const point = pointersRef.current.get(e.pointerId) ?? toLocal(e);
+    pointersRef.current.delete(e.pointerId);
+    const wasPinch = pinchRef.current !== null;
+    if (pointersRef.current.size < 2) pinchRef.current = null;
+    const wasClick = !movedRef.current && !wasPinch;
     dragRef.current = { mode: null, fovId: null };
     startRef.current = null;
     if (!wasClick || !catalogs) return;
-    const { x, y } = toLocal(e);
+    const { x, y } = point;
     const ll = unprojectToAltAz(x, y, basis, sky.fovDeg, size.w, size.h);
     const eq = altAzToRaDec(ll.altDeg, ll.azDeg, observer.latDeg, observer.lonDegEast, observer.date);
     const tol = Math.max(0.2, sky.fovDeg * 0.03);
@@ -464,9 +510,16 @@ export function SkyView() {
     }
   };
 
+  const onPointerCancel = (e: React.PointerEvent) => {
+    pointersRef.current.delete(e.pointerId);
+    if (pointersRef.current.size < 2) pinchRef.current = null;
+    dragRef.current = { mode: null, fovId: null };
+    startRef.current = null;
+  };
+
   const onWheel = (e: React.WheelEvent) => {
     const factor = e.deltaY > 0 ? 1.15 : 0.87;
-    update({ fovDeg: Math.max(0.3, Math.min(120, sky.fovDeg * factor)) });
+    update({ fovDeg: clampFov(sky.fovDeg * factor) });
   };
 
   return (
@@ -478,7 +531,7 @@ export function SkyView() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={() => { dragRef.current = { mode: null, fovId: null }; startRef.current = null; }}
+        onPointerCancel={onPointerCancel}
         onWheel={onWheel}
       />
       {sky.showBackground && hips.loading && <div className="hd-loading" role="status">DSS2 · caricamento dettagli…</div>}

@@ -28,7 +28,7 @@ void main(){
 interface Props { basis: ViewBasis; fov: number; width: number; height: number; lat: number; lon: number; date: Date; hips: HipsBackground }
 export function SurveyBackground(props: Props) {
  const ref=useRef<HTMLCanvasElement>(null);
- const renderer=useRef<{gl: WebGLRenderingContext; program: WebGLProgram; patch: WebGLTexture; image: HTMLImageElement | null} | null>(null);
+ const renderer=useRef<{gl: WebGLRenderingContext; program: WebGLProgram; patch: WebGLTexture; image: HTMLImageElement | HTMLCanvasElement | null} | null>(null);
  const [error,setError]=useState(false);
  useEffect(()=>{
   const gl=ref.current?.getContext("webgl",{alpha:false,antialias:false});

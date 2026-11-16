@@ -8,12 +8,14 @@ real telescope field-of-view math. No mock data.
 ## Features
 
 - Fullscreen 3D-like perspective sky computed from your latitude, longitude, date and time
-- Progressive deep sky photos from CDS HiPS2FITS (DSS2 color): zoom in and resolution increases like a map
+- Progressive deep sky photos stitched in the browser from CORS-enabled DSS2 color HiPS tiles (ESA Sky, STScI MAST, CSIRO CASDA): zoom in and resolution increases like a map
 - 15,588 stars from the HYG database, 12,137 deep sky objects from OpenNGC, 88 constellations from Stellarium
 - Floating dock: object search, layers and grids, telescope and Barlow setup, camera setup, field of view, location
+- Mobile layout with bottom-sheet panels, safe-area insets, compact dock, pinch-to-zoom and one-finger pan; lighter DSS2 textures on phones
 - Telescope FOV calculator from focal length, aperture, Barlow, sensor resolution and pixel size, with a draggable overlay on the sky
+- One-click Seestar S30 Plus preview: 30/160 mm f/5.3 optics, SC485SL sensor, 2.66° × 1.50° field framed on the sky
 - DSS2 cutout preview for the selected object with a link to Aladin Lite
-- GitHub Actions sky pack: the Pages build downloads and embeds 60°, 30° and 15° DSS2 tiles locally, with an artifact cache to avoid downloading unchanged tiles again
+- Resolution-aware HiPS orders, tile cache and automatic mirror fallback, with a local sky pack used first when present
 
 ## Quickstart
 
@@ -22,7 +24,6 @@ Requirements: Node.js 20+.
 ```bash
 npm install
 npm run download:data
-npm run download:sky-pack
 npm run dev
 ```
 
@@ -33,8 +34,8 @@ npm run build
 npm run preview
 ```
 
-`npm run download:data` fetches the real catalogs into `public/data` and the
-all-sky photo into `public/surveys`. It also runs automatically before every build.
+`npm run download:data` regenerates the bundled catalogs in `public/data`.
+It is only needed when updating the catalogs, not for a normal build.
 
 ## Data sources
 
@@ -43,7 +44,7 @@ all-sky photo into `public/surveys`. It also runs automatically before every bui
 | Stars | HYG database mirror (Hipparcos, Yale Bright Star, Gliese) | Use with attribution |
 | Deep sky objects | OpenNGC by Mattia Verga | CC-BY-SA-4.0 |
 | Constellation lines | Stellarium western sky culture | GPL-2.0 |
-| Deep sky photos | CDS HiPS2FITS, DSS2 color | For research and education |
+| Deep sky photos | DSS2 color HiPS tiles, ESA Sky / STScI MAST / CSIRO CASDA | For research and education |
 | Milky Way panorama | ESO/S. Brunier (eso0932a) | CC BY 4.0 |
 
 ## Project structure
@@ -62,11 +63,12 @@ src/components/CameraPanel     sensor resolution and pixel size
 src/components/FovPanel        computed field of view plus Add to view
 src/components/LocationPanel   geographic position, date and time
 src/components/ObjectDetail    DSS2 preview of the selected object
+src/data/equipment            telescope, camera and smart telescope presets
 src/hooks                     useSkyView, useObserver, useFovSetup, useHipsBackground
 src/services/astroMath        sidereal time, AltAz conversions
 src/services/catalog          runtime catalog loading and search
 src/services/fov              field of view math
-src/services/hips             HiPS2FITS progressive photo cutouts
+src/services/hips             HiPS tiles, HEALPix math and TAN texture stitching
 src/services/survey           DSS and Aladin Lite links
 src/services/viewProjection   perspective projection math
 src/store/skyStore            shared UI and observer state
@@ -75,4 +77,7 @@ src/store/skyStore            shared UI and observer state
 ## Deploy
 
 Pushing to `main` deploys to GitHub Pages through `.github/workflows/deploy.yml`.
-The workflow downloads a static DSS2 sky pack into the Pages artifact. The browser uses those local tiles first and only asks HiPS2FITS for a view outside the generated pack. The build uses relative asset paths, so any Pages URL works.
+Textures are stitched at runtime from CORS-enabled DSS2 HiPS mirrors, so the
+artifact stays fully static and needs no server proxy. If `public/surveys/pack`
+is present it is used first; otherwise the app reads the survey tiles directly.
+The build uses relative asset paths, so any Pages URL works.
