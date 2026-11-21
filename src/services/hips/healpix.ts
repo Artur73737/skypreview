@@ -55,32 +55,23 @@ export function tanPixelToRaDec(
   yPx: number,
   sizePx: number,
 ): SkyPosition {
-  const ra0 = raDeg * DEG;
-  const dec0 = decDeg * DEG;
-  const xi = (sizePx / 2 - (xPx + 0.5)) * scaleDeg * DEG;
-  const eta = (sizePx / 2 - (yPx + 0.5)) * scaleDeg * DEG;
-  const rho = Math.hypot(xi, eta);
-  if (rho < 1e-12) return { raDeg: wrap(raDeg, 360), decDeg };
+  return prepareTanProjection(raDeg, decDeg, scaleDeg, sizePx)(xPx, yPx);
+}
 
-  const angularDistance = Math.atan(rho);
-  const sinDistance = Math.sin(angularDistance);
-  const cosDistance = Math.cos(angularDistance);
-  const sinDec0 = Math.sin(dec0);
-  const cosDec0 = Math.cos(dec0);
-  const dec = Math.asin(
-    clip(
-      cosDistance * sinDec0 + (eta * sinDistance * cosDec0) / rho,
-      -1,
-      1,
-    ),
-  );
-  const ra =
-    ra0 +
-    Math.atan2(
-      xi * sinDistance,
-      rho * cosDec0 * cosDistance - eta * sinDec0 * sinDistance,
-    );
-  return { raDeg: wrap(ra / DEG, 360), decDeg: dec / DEG };
+export function prepareTanProjection(raDeg: number, decDeg: number, scaleDeg: number, sizePx: number) {
+  const ra0 = raDeg * DEG;
+  const sinDec0 = Math.sin(decDeg * DEG);
+  const cosDec0 = Math.cos(decDeg * DEG);
+  const center = sizePx / 2;
+  return (xPx: number, yPx: number): SkyPosition => {
+    const xi = (center - (xPx + 0.5)) * scaleDeg * DEG;
+    const eta = (center - (yPx + 0.5)) * scaleDeg * DEG;
+    // Inverse TAN: the ray has tangent-plane coordinates (xi, eta, 1).
+    const normal = Math.sqrt(1 + xi * xi + eta * eta);
+    const dec = Math.asin(clip((sinDec0 + eta * cosDec0) / normal, -1, 1));
+    const ra = ra0 + Math.atan2(xi, cosDec0 - eta * sinDec0);
+    return { raDeg: wrap(ra / DEG, 360), decDeg: dec / DEG };
+  };
 }
 
 function sigma(z: number): number {

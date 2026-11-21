@@ -77,7 +77,7 @@ export function SkyView() {
     round10(centerEq.decDeg),
     round10(surveyFov),
     sky.quality.textureSize || (compactViewport ? 1024 : 2048),
-    sky.quality.localPack && sky.quality.textureSize === 0 && sky.quality.maxOrder === 9,
+    !sky.quality.sourceColors && sky.quality.localPack && sky.quality.textureSize === 0 && sky.quality.maxOrder === 9,
     sky.quality.maxOrder,
   );
   const horizontal = useMemo(() => {
@@ -376,7 +376,7 @@ export function SkyView() {
       ctx.fillStyle = palette[i % palette.length];
       ctx.font = `${12 * size.dpr}px system-ui`;
       ctx.fillText(
-        `${box.label} ${box.widthDeg.toFixed(2)}°×${box.heightDeg.toFixed(2)}°`,
+        `${box.label} ${box.widthDeg.toFixed(2)}Â°Ã—${box.heightDeg.toFixed(2)}Â°`,
         r.p.x - fw / 2 + 4,
         r.p.y - fh / 2 - 8,
       );
@@ -524,7 +524,7 @@ export function SkyView() {
         selected: {
           kind: "solar",
           label: solarBody.label,
-          sub: `${solarBody.definition.kind === "moon" ? "Satellite" : "Planet"} · magnitude ${solarBody.magnitude.toFixed(1)}`,
+          sub: `${solarBody.definition.kind === "moon" ? "Satellite" : "Planet"} Â· magnitude ${solarBody.magnitude.toFixed(1)}`,
           raHours: solarBody.raHours,
           decDeg: solarBody.decDeg,
           mag: solarBody.magnitude,
@@ -549,7 +549,7 @@ export function SkyView() {
         best = {
           ra: d.raHours,
           dec: d.decDeg,
-          label: d.messier ? `${d.messier} · ${d.id}` : d.id,
+          label: d.messier ? `${d.messier} Â· ${d.id}` : d.id,
           sub: `${d.type} mag ${d.mag ?? "?"}`,
           mag: d.mag,
           ref: d as never,
@@ -597,7 +597,7 @@ export function SkyView() {
         onPointerCancel={onPointerCancel}
         onWheel={onWheel}
       />
-      {sky.showBackground && hips.loading && <div className="hd-loading" role="status">DSS2 · loading imagery…</div>}
+      {sky.showBackground && hips.loading && <div className="hd-loading" role="status">DSS2 Â· loading imageryâ€¦</div>}
       {sky.showBackground && hips.error && <div className="hd-loading" role="alert">{hips.error} <button onClick={hips.retry}>Retry</button></div>}
     </>
   );

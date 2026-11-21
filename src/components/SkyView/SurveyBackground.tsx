@@ -12,6 +12,7 @@ uniform vec3 forward, right, up, eqX, eqY, eqZ;
 uniform float aspect, tangent, patchTangent, hasPatch;
 uniform vec3 patchCenter, patchEast, patchNorth;
 uniform sampler2D patch;
+uniform bool sourceColors;
 uniform float exposure, highlights, gamma, saturation;
 const float PI=3.141592653589793;
 void main(){
@@ -24,7 +25,12 @@ void main(){
  if(hasPatch>.5 && z>0.){
   vec2 uv=vec2(.5-dot(eq,patchEast)/(2.*z*patchTangent),.5+dot(eq,patchNorth)/(2.*z*patchTangent));
   if(uv.x>=0. && uv.x<=1. && uv.y>=0. && uv.y<=1.) {
-   vec3 rgb = pow(texture2D(patch,uv).rgb * exp2(exposure), vec3(1./gamma));
+   vec3 sampled = texture2D(patch,uv).rgb;
+   if (sourceColors) {
+    gl_FragColor = vec4(sampled, 1.);
+    return;
+   }
+   vec3 rgb = pow(sampled * exp2(exposure), vec3(1./gamma));
    rgb = max(mix(vec3(dot(rgb,vec3(.2126,.7152,.0722))),rgb,saturation),0.);
 
    // Keep shadows and midtones unchanged by highlight compression.
@@ -74,6 +80,7 @@ export function SurveyBackground(props: Props) {
   v("patchEast",[-Math.sin(ra),Math.cos(ra),0]);v("patchNorth",[-Math.sin(dec)*Math.cos(ra),-Math.sin(dec)*Math.sin(ra),Math.cos(dec)]);
   f("patchTangent",Math.tan(hips.fovDeg*Math.PI/360));
   if(hips.img && hips.img!==r.image){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,r.patch);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,hips.img);r.image=hips.img;}
+  gl.uniform1i(gl.getUniformLocation(program,"sourceColors"), quality.sourceColors ? 1 : 0);
   f("exposure", quality.exposure); f("highlights", quality.highlights);
   f("gamma", quality.gamma); f("saturation", quality.saturation);
   gl.activeTexture(gl.TEXTURE1);

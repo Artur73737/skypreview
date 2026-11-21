@@ -3,7 +3,7 @@ import {
   computeTanScaleDeg,
   healpixTileOrder,
   raDecToHipsTile,
-  tanPixelToRaDec,
+  prepareTanProjection,
 } from "./healpix";
 
 // DSS2 color is published as a static HiPS. These mirrors expose it with CORS,
@@ -139,18 +139,12 @@ function samplePositions(sizePx: number): number[] {
 /** Lists the HiPS tiles that can cover the requested TAN view. */
 export function findHipsTiles(cutout: HipsCutout, order: number): number[] {
   const scale = computeTanScaleDeg(cutout.fovDeg, cutout.sizePx);
+  const project = prepareTanProjection(cutout.raDeg, cutout.decDeg, scale, cutout.sizePx);
   const positions = samplePositions(cutout.sizePx);
   const tiles = new Set<number>();
   for (const yPx of positions) {
     for (const xPx of positions) {
-      const { raDeg, decDeg } = tanPixelToRaDec(
-        cutout.raDeg,
-        cutout.decDeg,
-        scale,
-        xPx,
-        yPx,
-        cutout.sizePx,
-      );
+      const { raDeg, decDeg } = project(xPx, yPx);
       tiles.add(raDecToHipsTile(raDeg, decDeg, order).ipix);
     }
   }
@@ -176,16 +170,10 @@ function renderRows(
 ): void {
   const size = cutout.sizePx;
   const scale = computeTanScaleDeg(cutout.fovDeg, size);
+  const project = prepareTanProjection(cutout.raDeg, cutout.decDeg, scale, size);
   for (let yPx = fromRow; yPx < toRow; yPx += 1) {
     for (let xPx = 0; xPx < size; xPx += 1) {
-      const { raDeg, decDeg } = tanPixelToRaDec(
-        cutout.raDeg,
-        cutout.decDeg,
-        scale,
-        xPx,
-        yPx,
-        size,
-      );
+      const { raDeg, decDeg } = project(xPx, yPx);
       const position = raDecToHipsTile(raDeg, decDeg, order);
       const tile = tiles.get(position.ipix);
       if (!tile) continue;
@@ -284,6 +272,7 @@ export async function composeHipsTexture(
 
   const image = context.createImageData(cutout.sizePx, cutout.sizePx);
   fillBackground(image.data);
+  let lastYield = performance.now();
   for (let row = 0; row < cutout.sizePx; row += YIELD_ROWS) {
     renderRows(
       cutout,
@@ -293,8 +282,11 @@ export async function composeHipsTexture(
       row,
       Math.min(row + YIELD_ROWS, cutout.sizePx),
     );
-    await nextFrame();
-    throwIfAborted(signal);
+    if (typeof document !== "undefined" || performance.now() - lastYield >= 16) {
+      await nextFrame();
+      throwIfAborted(signal);
+      lastYield = performance.now();
+    }
   }
 
   context.putImageData(image, 0, 0);

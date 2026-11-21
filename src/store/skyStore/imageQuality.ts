@@ -18,6 +18,7 @@ export const defaultQuality = {
   highlights: 0.25,
   gamma: 1,
   saturation: 1,
+  sourceColors: true,
   smooth: false,
   localPack: true,
 };
@@ -33,6 +34,7 @@ export function readQuality(value: Partial<ImageQuality> | null | undefined): Im
     if (typeof n === "number" && Number.isFinite(n) && n >= min && n <= max)
       quality[key] = Number((min + Math.round((n - min) / step) * step).toFixed(2));
   }
+  if (typeof value?.sourceColors === "boolean") quality.sourceColors = value.sourceColors;
   if (typeof value?.smooth === "boolean") quality.smooth = value.smooth;
   if (typeof value?.localPack === "boolean") quality.localPack = value.localPack;
   return quality;
