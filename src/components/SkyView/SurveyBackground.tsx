@@ -24,11 +24,16 @@ void main(){
  if(hasPatch>.5 && z>0.){
   vec2 uv=vec2(.5-dot(eq,patchEast)/(2.*z*patchTangent),.5+dot(eq,patchNorth)/(2.*z*patchTangent));
   if(uv.x>=0. && uv.x<=1. && uv.y>=0. && uv.y<=1.) {
-   vec3 rgb = texture2D(patch,uv).rgb;
+   vec3 rgb = pow(texture2D(patch,uv).rgb * exp2(exposure), vec3(1./gamma));
+   rgb = max(mix(vec3(dot(rgb,vec3(.2126,.7152,.0722))),rgb,saturation),0.);
+
+   // Keep shadows and midtones unchanged by highlight compression.
+   // Scale all channels together so bright cores retain their color.
    float peak = max(rgb.r,max(rgb.g,rgb.b));
-   rgb *= exp2(exposure) / (1. + highlights * peak * peak);
-   rgb = pow(clamp(rgb,0.,1.), vec3(1./gamma));
-   color.rgb = clamp(mix(vec3(dot(rgb,vec3(.2126,.7152,.0722))),rgb,saturation),0.,1.);
+   const float knee = .46;
+   float excess = max(peak - knee, 0.);
+   float compressed = min(peak, knee) + excess / (1. + 32. * highlights * excess);
+   color.rgb = rgb * (min(compressed, 1.) / max(peak, .000001));
   }
  }
  gl_FragColor=vec4(color.rgb,1.);
