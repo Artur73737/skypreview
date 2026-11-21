@@ -35,6 +35,7 @@ const DEFAULT_STATE: SkyState = {
   showHorizon: true,
   showBackground: true,
   hdPhotos: true,
+  showSolarSystem: true,
   observer: {
     latDeg: Number(import.meta.env.VITE_DEFAULT_LAT ?? 45.4642),
     lonDegEast: Number(import.meta.env.VITE_DEFAULT_LON ?? 9.19),
@@ -49,7 +50,7 @@ const DEFAULT_STATE: SkyState = {
 };
 
 const SETTINGS_KEY = "skypreview.settings.v2";
-const LAYERS = ["showStars", "showStarNames", "showDso", "showDsoNames", "showConstellations", "showEqGrid", "showAzGrid", "showHorizon", "showCardinal", "showBackground", "hdPhotos"] as const;
+const LAYERS = ["showStars", "showStarNames", "showDso", "showDsoNames", "showConstellations", "showEqGrid", "showAzGrid", "showHorizon", "showCardinal", "showBackground", "hdPhotos", "showSolarSystem"] as const;
 function initialState(): SkyState {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null");

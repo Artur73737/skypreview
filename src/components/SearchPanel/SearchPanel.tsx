@@ -1,21 +1,27 @@
 import { useMemo, useState } from "react";
 import { raDecToAltAz } from "../../services/astroMath";
 import { searchCatalogs } from "../../services/catalog";
+import { searchSolarBodies } from "../../services/solarSystem";
+import { useSolarSystem } from "../../hooks/useSolarSystem";
 import { useSkyStore } from "../../store/skyStore";
 
 export function SearchPanel() {
   const { sky, catalogs, catalogLoading, update } = useSkyStore();
   const [query, setQuery] = useState("M31");
+  const solar = useSolarSystem(sky.observer.latDeg, sky.observer.lonDegEast, sky.observer.dateIso);
   const hits = useMemo(
-    () => (catalogs ? searchCatalogs(catalogs, query) : []),
-    [catalogs, query],
+    () => [
+      ...searchSolarBodies(query, solar),
+      ...(catalogs ? searchCatalogs(catalogs, query) : []),
+    ],
+    [catalogs, query, solar],
   );
   return (
     <div>
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Cerca M31, M42, Vega, NGC224..."
+        placeholder="Cerca M31, Vega, Giove…"
         aria-label="Ricerca oggetti"
         style={inputStyle}
       />
@@ -29,6 +35,18 @@ export function SearchPanel() {
             <button
               style={rowStyle}
               onClick={() => {
+                if (h.kind === "solar") {
+                  const snapshot = solar.bodies.find((body) => body.id === h.ref.id);
+                  if (!snapshot) return;
+                  update({
+                    viewAltDeg: snapshot.altDeg,
+                    viewAzDeg: snapshot.azDeg,
+                    fovDeg: snapshot.angularDiameterDeg * 8,
+                    selected: h,
+                    activePanel: "object",
+                  });
+                  return;
+                }
                 const date = new Date(sky.observer.dateIso);
                 const ll = raDecToAltAz(
                   h.raHours,

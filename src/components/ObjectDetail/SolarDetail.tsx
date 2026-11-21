@@ -1,0 +1,154 @@
+import { useEffect, useRef } from "react";
+import { useObserver } from "../../hooks/useObserver";
+import { useSolarSystem } from "../../hooks/useSolarSystem";
+import { useSolarTextures } from "../../hooks/useSolarTextures";
+import {
+  drawTexturedBody,
+  type SolarBodyDefinition,
+} from "../../services/solarSystem";
+import { useSkyStore } from "../../store/skyStore";
+import { formatDec, formatLatLon, formatRa } from "../../utils/format";
+
+interface SolarDetailProps {
+  definition: SolarBodyDefinition;
+}
+
+function formatDistance(distanceAu: number, distanceKm: number): string {
+  if (distanceAu < 0.05) return `${Math.round(distanceKm).toLocaleString("it")} km`;
+  return `${distanceAu.toFixed(3)} UA · ${(distanceKm / 1_000_000).toFixed(1)} milioni km`;
+}
+
+function formatAngularDiameter(diameterDeg: number): string {
+  const arcseconds = diameterDeg * 3600;
+  if (arcseconds < 120) return `${arcseconds.toFixed(1)}″`;
+  return `${(diameterDeg * 60).toFixed(1)}′ (${arcseconds.toFixed(0)}″)`;
+}
+
+export function SolarDetail({ definition }: SolarDetailProps) {
+  const { sky, update } = useSkyStore();
+  const observer = useObserver(sky.observer.latDeg, sky.observer.lonDegEast, sky.observer.dateIso);
+  const solar = useSolarSystem(observer.latDeg, observer.lonDegEast, sky.observer.dateIso);
+  const textures = useSolarTextures();
+  const snapshot = solar.bodies.find((body) => body.id === definition.id);
+  const previewRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = previewRef.current;
+    const image = textures.images[definition.id];
+    if (!canvas || !image || !snapshot) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const size = 176;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    const ring = definition.id === "saturn" ? snapshot.ringTiltDeg : null;
+    drawTexturedBody(context, image, (size * dpr) / 2, (size * dpr) / 2, size * dpr * (ring == null ? 0.4 : 0.18), {
+      phaseFraction: snapshot.phaseFraction,
+      sunAngleRad: 0,
+      opacity: 1,
+      ringTiltDeg: ring,
+      ringAlpha: textures.ringAlpha,
+    });
+  }, [definition.id, snapshot, textures]);
+
+  if (!snapshot) return <p style={hint}>Corpo non disponibile a questa data.</p>;
+
+  const center = () => {
+    update({
+      viewAltDeg: snapshot.altDeg,
+      viewAzDeg: snapshot.azDeg,
+      fovDeg: snapshot.angularDiameterDeg * 8,
+      selected: {
+        kind: "solar",
+        label: snapshot.label,
+        sub: `${definition.kind === "moon" ? "Satellite" : "Pianeta"} · magnitudine ${snapshot.magnitude.toFixed(1)}`,
+        raHours: snapshot.raHours,
+        decDeg: snapshot.decDeg,
+        mag: snapshot.magnitude,
+        ref: definition,
+      },
+      activePanel: "object",
+    });
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <canvas
+          ref={previewRef}
+          role="img"
+          aria-label={`${snapshot.label} con fase corrente`}
+          style={{ width: 88, height: 88, flex: "0 0 auto", borderRadius: "50%", background: "rgba(255,255,255,0.03)" }}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+          <div style={{ fontWeight: 650, color: "#f8fafc", fontSize: 17 }}>{snapshot.label}</div>
+          <div style={hint}>
+            {definition.kind === "moon" ? "Satellite naturale" : "Pianeta"} · {snapshot.englishName}
+          </div>
+          <div style={hint}>Magnitudine {snapshot.magnitude.toFixed(1)}</div>
+        </div>
+      </div>
+
+      {snapshot.altDeg < 0 && (
+        <p style={warning}>Sotto l'orizzonte di {Math.abs(snapshot.altDeg).toFixed(1)}°.</p>
+      )}
+
+      <dl style={grid}>
+        <dt style={term}>RA / Dec apparenti</dt>
+        <dd style={value}>{formatRa(snapshot.raHours)} · {formatDec(snapshot.decDeg)}</dd>
+        <dt style={term}>Altezza / Azimut</dt>
+        <dd style={value}>{snapshot.altDeg.toFixed(2)}° · {snapshot.azDeg.toFixed(2)}°</dd>
+        <dt style={term}>Distanza topocentrica</dt>
+        <dd style={value}>{formatDistance(snapshot.distanceAu, snapshot.distanceKm)}</dd>
+        <dt style={term}>Diametro apparente</dt>
+        <dd style={value}>{formatAngularDiameter(snapshot.angularDiameterDeg)}</dd>
+        <dt style={term}>Fase illuminata</dt>
+        <dd style={value}>{Math.round(snapshot.phaseFraction * 100)}%</dd>
+        {snapshot.ringTiltDeg !== null && (
+          <>
+            <dt style={term}>Inclinazione anelli</dt>
+            <dd style={value}>{snapshot.ringTiltDeg.toFixed(1)}°</dd>
+          </>
+        )}
+      </dl>
+
+      <p style={hint}>
+        {formatLatLon(observer.latDeg, observer.lonDegEast)} ·{" "}
+        {sky.observer.live ? "aggiornamento in tempo reale" : "data impostata"}
+      </p>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={center} style={button}>Centra</button>
+        <button
+          onClick={() => update({ showSolarSystem: !sky.showSolarSystem })}
+          style={button}
+        >
+          {sky.showSolarSystem ? "Nascondi nel cielo" : "Mostra nel cielo"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const hint: React.CSSProperties = { color: "#94a3b8", fontSize: 12, margin: 0 };
+const warning: React.CSSProperties = { color: "#fbbf24", fontSize: 12, margin: 0 };
+const grid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "auto 1fr",
+  gap: "6px 12px",
+  margin: 0,
+  fontSize: 12.5,
+};
+const term: React.CSSProperties = { color: "#94a3b8", margin: 0 };
+const value: React.CSSProperties = { color: "#f1f5f9", margin: 0, textAlign: "right" };
+const button: React.CSSProperties = {
+  padding: "7px 11px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.16)",
+  background: "rgba(255,255,255,0.08)",
+  color: "#f8fafc",
+  fontSize: 13,
+  cursor: "pointer",
+};

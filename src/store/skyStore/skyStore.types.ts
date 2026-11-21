@@ -1,4 +1,5 @@
 import type { SearchHit } from "../../services/catalog";
+import type { SolarSelection } from "../../services/solarSystem";
 
 export interface ObserverState {
   latDeg: number;
@@ -54,10 +55,11 @@ export interface SkyState {
   showHorizon: boolean;
   showBackground: boolean;
   hdPhotos: boolean;
+  showSolarSystem: boolean;
   observer: ObserverState;
   optics: OpticsState;
   camera: CameraState;
   fovs: FovBox[];
-  selected: SearchHit | null;
+  selected: SearchHit | SolarSelection | null;
   activePanel: PanelId | null;
 }

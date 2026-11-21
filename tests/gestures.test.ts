@@ -11,7 +11,7 @@ describe("touch pinch zoom", () => {
   });
 
   it("clamps the field of view to the supported range", () => {
-    expect(fovForPinch(100, 20, 20000)).toBe(MIN_FOV_DEG);
+    expect(fovForPinch(0.1, 20, 20000)).toBe(MIN_FOV_DEG);
     expect(fovForPinch(100, 20000, 20)).toBe(MAX_FOV_DEG);
   });
 
@@ -21,7 +21,7 @@ describe("touch pinch zoom", () => {
   });
 
   it("clamps wheel zoom through the shared helper", () => {
-    expect(clampFov(0.01)).toBe(MIN_FOV_DEG);
+    expect(clampFov(0.0001)).toBe(MIN_FOV_DEG);
     expect(clampFov(400)).toBe(MAX_FOV_DEG);
     expect(clampFov(42)).toBe(42);
   });

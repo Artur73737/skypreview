@@ -1,4 +1,4 @@
-export const MIN_FOV_DEG = 0.3;
+export const MIN_FOV_DEG = 0.001;
 export const MAX_FOV_DEG = 120;
 
 export function clampFov(fovDeg: number): number {

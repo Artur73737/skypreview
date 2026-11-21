@@ -7,10 +7,17 @@ import {
 } from "../../services/viewProjection";
 import { useHipsBackground } from "../../hooks/useHipsBackground";
 import { useObserver } from "../../hooks/useObserver";
+import { useSolarSystem } from "../../hooks/useSolarSystem";
+import { useSolarTextures } from "../../hooks/useSolarTextures";
 import { useSkyStore } from "../../store/skyStore";
 import { SurveyBackground } from "./SurveyBackground";
 import { dsoColor, starColor, starRadius } from "./skyDraw";
 import { clampFov, fovForPinch } from "./pinch";
+import {
+  drawSolarLayer,
+  pickSolarBody,
+  type SolarCamera,
+} from "./solarLayer";
 
 interface Layer {
   starMag: number;
@@ -51,6 +58,8 @@ export function SkyView() {
   const movedRef = useRef(false);
   const { sky, catalogs, update } = useSkyStore();
   const observer = useObserver(sky.observer.latDeg, sky.observer.lonDegEast, sky.observer.dateIso);
+  const solar = useSolarSystem(observer.latDeg, observer.lonDegEast, sky.observer.dateIso);
+  const solarTextures = useSolarTextures();
 
   const basis = useMemo(() => basisForView(sky.viewAltDeg, sky.viewAzDeg), [sky.viewAltDeg, sky.viewAzDeg]);
 
@@ -319,6 +328,17 @@ export function SkyView() {
       }
     }
 
+    if (sky.showSolarSystem) {
+      drawSolarLayer(ctx, {
+        camera: { basis, fovDeg: fov, width: w, height: h, dpr: size.dpr },
+        snapshot: solar,
+        textures: solarTextures,
+        selectedId: sky.selected?.kind === "solar" ? sky.selected.ref.id : null,
+        dimBelowHorizon: sky.showHorizon,
+        claimLabel: claim,
+      });
+    }
+
     if (sky.showCardinal) {
       const labels: [string, number][] = [["N", 0], ["E", 90], ["S", 180], ["W", 270]];
       ctx.font = `${13 * size.dpr}px system-ui`;
@@ -360,7 +380,7 @@ export function SkyView() {
       );
     });
 
-    if (sky.selected) {
+    if (sky.selected && sky.selected.kind !== "solar") {
       const r = eqToXy(sky.selected.raHours, sky.selected.decDeg);
       if (r.p.visible) {
         ctx.strokeStyle = "#f8fafc";
@@ -471,8 +491,32 @@ export function SkyView() {
     const wasClick = !movedRef.current && !wasPinch;
     dragRef.current = { mode: null, fovId: null };
     startRef.current = null;
-    if (!wasClick || !catalogs) return;
+    if (!wasClick) return;
     const { x, y } = point;
+    const camera: SolarCamera = {
+      basis,
+      fovDeg: sky.fovDeg,
+      width: size.w,
+      height: size.h,
+      dpr: size.dpr,
+    };
+    const solarBody = pickSolarBody(x, y, solar, camera);
+    if (solarBody) {
+      update({
+        selected: {
+          kind: "solar",
+          label: solarBody.label,
+          sub: `${solarBody.definition.kind === "moon" ? "Satellite" : "Pianeta"} · magnitudine ${solarBody.magnitude.toFixed(1)}`,
+          raHours: solarBody.raHours,
+          decDeg: solarBody.decDeg,
+          mag: solarBody.magnitude,
+          ref: solarBody.definition,
+        },
+        activePanel: "object",
+      });
+      return;
+    }
+    if (!catalogs) return;
     const ll = unprojectToAltAz(x, y, basis, sky.fovDeg, size.w, size.h);
     const eq = altAzToRaDec(ll.altDeg, ll.azDeg, observer.latDeg, observer.lonDegEast, observer.date);
     const tol = Math.max(0.2, sky.fovDeg * 0.03);

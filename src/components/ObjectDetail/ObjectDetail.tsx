@@ -4,14 +4,16 @@ import type { DsoEntry } from "../../services/catalog";
 import { getAladinLiteUrl } from "../../services/survey";
 import { useSkyStore } from "../../store/skyStore";
 import { formatDec, formatRa } from "../../utils/format";
+import { SolarDetail } from "./SolarDetail";
 
 export function ObjectDetail() {
   const { sky } = useSkyStore();
   const sel = sky.selected;
   const extent = sel?.kind === "dso" ? ((sel.ref as DsoEntry).sizeArcmin[0] ?? 20) / 60 : 0.5;
   const field = Math.max(0.25, extent * 1.5);
-  const photo = useHipsBackground(Boolean(sel), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field, 512);
+  const photo = useHipsBackground(Boolean(sel && sel.kind !== "solar"), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field, 512);
   if (!sel) return <p style={hint}>Clicca un oggetto nel cielo o cercalo.</p>;
+  if (sel.kind === "solar") return <SolarDetail definition={sel.ref} />;
   const raDeg = sel.raHours * 15;
 
   const aladin = getAladinLiteUrl(raDeg, sel.decDeg, 1);
