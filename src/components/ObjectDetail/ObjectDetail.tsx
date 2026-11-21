@@ -11,7 +11,7 @@ export function ObjectDetail() {
   const sel = sky.selected;
   const extent = sel?.kind === "dso" ? ((sel.ref as DsoEntry).sizeArcmin[0] ?? 20) / 60 : 0.5;
   const field = Math.max(0.25, extent * 1.5);
-  const photo = useHipsBackground(Boolean(sel && sel.kind !== "solar"), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field, 512, false);
+  const photo = useHipsBackground(Boolean(sel && sel.kind !== "solar"), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field, sky.quality.previewSize, false, sky.quality.maxOrder);
   if (!sel) return <p style={hint}>Select an object on the map or use Search.</p>;
   if (sel.kind === "solar") return <SolarDetail definition={sel.ref} />;
   const raDeg = sel.raHours * 15;

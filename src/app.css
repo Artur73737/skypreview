@@ -91,3 +91,9 @@ input[type=checkbox] { width: 16px; height: 16px; margin: 0; flex: none; }
 .galilean-moons > div { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; margin-top:6px; }
 .app .galilean-moons button { display:grid; gap:4px; justify-items:center; font-size:10px; padding:5px 2px !important; }
 .galilean-moons img { width:100%; aspect-ratio:2; object-fit:cover; border-radius:3px; }
+.quality-settings { display: grid; gap: 10px; }
+.quality-settings label { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items:center; gap: 4px 10px; font-size: 12px; }
+.quality-settings input[type=range] { grid-column: 1/-1; width: 100%; margin: 0; }
+.quality-settings output { color: var(--muted); font-variant-numeric: tabular-nums; }
+.quality-settings .quality-toggle { grid-template-columns: auto 1fr; }
+@media (max-width: 390px) { .app .dock-item { padding-inline: 4px !important; font-size: 11px; } }

@@ -32,6 +32,7 @@ export interface FovBox {
 }
 
 export type PanelId =
+  | "settings"
   | "search"
   | "view"
   | "optics"
@@ -61,5 +62,6 @@ export interface SkyState {
   camera: CameraState;
   fovs: FovBox[];
   selected: SearchHit | SolarSelection | null;
+  quality: import("./imageQuality").ImageQuality;
   activePanel: PanelId | null;
 }

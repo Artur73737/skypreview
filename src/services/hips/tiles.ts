@@ -15,8 +15,8 @@ export const HIPS_SURVEY_MIRRORS = [
 ] as const;
 
 const TILE_SIZE = 512;
-const TILE_CACHE_LIMIT = 48;
-const TEXTURE_CACHE_LIMIT = 3;
+const TILE_CACHE_LIMIT = 96;
+const TEXTURE_CACHE_BYTES = 128 * 1024 * 1024;
 const SAMPLE_STRIDE = 8;
 const YIELD_ROWS = 128;
 const TILE_TIMEOUT_MS = 12000;
@@ -28,7 +28,7 @@ export interface HipsTileData {
   pixels: Uint8ClampedArray;
 }
 
-const tileCache = new Map<string, Promise<HipsTileData | null>>();
+const tileCache = new Map<string, HipsTileData>();
 const textureCache = new Map<string, HTMLCanvasElement>();
 
 export function getHipsTileUrl(
@@ -99,26 +99,25 @@ async function fetchTilePixels(
   return null;
 }
 
-function getTile(
+async function getTile(
   order: number,
   ipix: number,
   signal?: AbortSignal,
 ): Promise<HipsTileData | null> {
   const key = `${order}/${ipix}`;
   const cached = tileCache.get(key);
-  if (cached) return cached;
-
-  const promise = fetchTilePixels(order, ipix, signal).catch((error) => {
+  if (cached) {
     tileCache.delete(key);
-    throw error;
-  });
-  tileCache.set(key, promise);
-  while (tileCache.size > TILE_CACHE_LIMIT) {
-    const oldest = tileCache.keys().next().value as string | undefined;
-    if (!oldest || oldest === key) break;
-    tileCache.delete(oldest);
+    tileCache.set(key, cached);
+    return cached;
   }
-  return promise;
+
+  const tile = await fetchTilePixels(order, ipix, signal);
+  if (tile) {
+    tileCache.set(key, tile);
+    if (tileCache.size > TILE_CACHE_LIMIT) tileCache.delete(tileCache.keys().next().value!);
+  }
+  return tile;
 }
 
 function samplePositions(sizePx: number): number[] {
@@ -229,9 +228,12 @@ function nextFrame(): Promise<void> {
 function cacheTexture(key: string, canvas: HTMLCanvasElement): void {
   textureCache.delete(key);
   textureCache.set(key, canvas);
-  while (textureCache.size > TEXTURE_CACHE_LIMIT) {
+  let bytes = [...textureCache.values()].reduce((sum, image) => sum + image.width * image.height * 4, 0);
+  while (bytes > TEXTURE_CACHE_BYTES) {
     const oldest = textureCache.keys().next().value as string | undefined;
     if (!oldest) break;
+    const image = textureCache.get(oldest)!;
+    bytes -= image.width * image.height * 4;
     textureCache.delete(oldest);
   }
 }
@@ -243,11 +245,16 @@ function cacheTexture(key: string, canvas: HTMLCanvasElement): void {
 export async function loadHipsTexture(
   cutout: HipsCutout,
   signal?: AbortSignal,
+  maxOrder = 9,
 ): Promise<HTMLCanvasElement> {
-  const cached = textureCache.get(cutout.key);
-  if (cached) return cached;
-
-  const order = healpixTileOrder(cutout.fovDeg, cutout.sizePx);
+  const order = Math.min(maxOrder, healpixTileOrder(cutout.fovDeg, cutout.sizePx));
+  const key = `${cutout.key}|${order}`;
+  const cached = textureCache.get(key);
+  if (cached) {
+    textureCache.delete(key);
+    textureCache.set(key, cached);
+    return cached;
+  }
   const tileIds = findHipsTiles(cutout, order);
   const tiles = new Map<number, HipsTileData>();
   await Promise.all(
@@ -261,6 +268,8 @@ export async function loadHipsTexture(
     }),
   );
   throwIfAborted(signal);
+
+  if (tiles.size === 0) throw new Error("No DSS2 tiles loaded");
 
   const canvas = document.createElement("canvas");
   canvas.width = cutout.sizePx;
@@ -284,6 +293,6 @@ export async function loadHipsTexture(
   }
 
   context.putImageData(image, 0, 0);
-  cacheTexture(cutout.key, canvas);
+  if (tiles.size === tileIds.length) cacheTexture(key, canvas);
   return canvas;
 }

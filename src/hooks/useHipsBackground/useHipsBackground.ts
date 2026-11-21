@@ -22,6 +22,7 @@ export function useHipsBackground(
   fovDeg: number,
   sizePx = 2048,
   useLocalPack = true,
+  maxOrder = 9,
 ) {
   const [retry, setRetry] = useState(0);
   const [state, setState] = useState<HipsBackground>({
@@ -54,7 +55,7 @@ export function useHipsBackground(
             if (controller.signal.aborted) return;
           }
         }
-        if (!img) img = await loadHipsTexture(requested, controller.signal);
+        if (!img) img = await loadHipsTexture(requested, controller.signal, maxOrder);
         if (controller.signal.aborted) return;
 
         setState({
@@ -80,6 +81,6 @@ export function useHipsBackground(
       clearTimeout(timer);
       controller.abort();
     };
-  }, [enabled, raDeg, decDeg, fovDeg, sizePx, retry, useLocalPack]);
+  }, [enabled, raDeg, decDeg, fovDeg, sizePx, retry, useLocalPack, maxOrder]);
   return { ...state, retry: () => setRetry((n) => n + 1) };
 }

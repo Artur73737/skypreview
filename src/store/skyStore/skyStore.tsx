@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { CatalogBundle } from "../../services/catalog";
 import { loadCatalogs } from "../../services/catalog";
+import { defaultQuality, readQuality } from "./imageQuality";
 import type { PanelId, SkyState } from "./skyStore.types";
 
 interface SkyStoreValue {
@@ -46,6 +47,7 @@ const DEFAULT_STATE: SkyState = {
   camera: { model: "Custom", resXpx: 6000, resYpx: 4000, pixelUm: 3.76 },
   fovs: [],
   selected: null,
+  quality: defaultQuality,
   activePanel: null,
 };
 
@@ -55,7 +57,7 @@ function initialState(): SkyState {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null");
     if (!saved) return DEFAULT_STATE;
-    const state = { ...DEFAULT_STATE, optics: { ...DEFAULT_STATE.optics }, camera: { ...DEFAULT_STATE.camera } };
+    const state = { ...DEFAULT_STATE, quality: readQuality(saved.quality), optics: { ...DEFAULT_STATE.optics }, camera: { ...DEFAULT_STATE.camera } };
     for (const key of LAYERS) if (typeof saved[key] === "boolean") state[key] = saved[key];
     for (const group of ["optics", "camera"] as const) {
       for (const key of Object.keys(state[group])) {
@@ -107,7 +109,7 @@ export function SkyStoreProvider({ children }: { children: ReactNode }) {
     return () => window.clearInterval(timer);
   }, [sky.observer.live]);
 
-  const settings = JSON.stringify({ optics: sky.optics, camera: sky.camera, ...Object.fromEntries(LAYERS.map(key => [key, sky[key]])) });
+  const settings = JSON.stringify({ quality: sky.quality, optics: sky.optics, camera: sky.camera, ...Object.fromEntries(LAYERS.map(key => [key, sky[key]])) });
   useEffect(() => { try { localStorage.setItem(SETTINGS_KEY, settings); } catch { /* Storage can be unavailable. */ } }, [settings]);
 
   const update = useCallback((patch: Partial<SkyState>) => {

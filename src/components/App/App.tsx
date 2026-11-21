@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { QualitySettings } from "../DisplayControls/QualitySettings";
 import { DisplayControls } from "../DisplayControls";
 import { Dock } from "../Dock";
 import { FovPanel } from "../FovPanel";
@@ -9,6 +10,7 @@ import { SkyView } from "../SkyView";
 import { useSkyStore, SkyStoreProvider } from "../../store/skyStore";
 
 const TOOLS = {
+  settings: { title: "Image settings", View: QualitySettings },
   search: { title: "Find an object", View: SearchPanel },
   view: { title: "Map layers", View: DisplayControls },
   fov: { title: "Field of view", View: FovPanel },

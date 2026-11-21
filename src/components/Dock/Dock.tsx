@@ -7,6 +7,7 @@ const ITEMS: { id: PanelId; label: string }[] = [
   { id: "fov", label: "FOV" },
   { id: "location", label: "Observer" },
   { id: "object", label: "Object" },
+  { id: "settings", label: "Settings" },
 ];
 
 export function Dock() {

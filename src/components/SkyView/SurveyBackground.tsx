@@ -3,6 +3,8 @@ import { raDecToAltAz } from "../../services/astroMath";
 import { vecFromAltAz, type ViewBasis } from "../../services/viewProjection";
 import type { HipsBackground } from "../../hooks/useHipsBackground/useHipsBackground";
 
+import type { ImageQuality } from "../../store/skyStore/imageQuality";
+
 const vertex = `attribute vec2 position; varying vec2 screen; void main(){ screen=position; gl_Position=vec4(position,0.,1.); }`;
 const fragment = `precision highp float;
 varying vec2 screen;
@@ -10,6 +12,7 @@ uniform vec3 forward, right, up, eqX, eqY, eqZ;
 uniform float aspect, tangent, patchTangent, hasPatch;
 uniform vec3 patchCenter, patchEast, patchNorth;
 uniform sampler2D patch;
+uniform float exposure, highlights, gamma, saturation;
 const float PI=3.141592653589793;
 void main(){
  vec3 world=normalize(forward+tangent*(screen.x*aspect*right+screen.y*up));
@@ -20,12 +23,18 @@ void main(){
  float z=dot(eq,patchCenter);
  if(hasPatch>.5 && z>0.){
   vec2 uv=vec2(.5-dot(eq,patchEast)/(2.*z*patchTangent),.5+dot(eq,patchNorth)/(2.*z*patchTangent));
-  if(uv.x>=0. && uv.x<=1. && uv.y>=0. && uv.y<=1.) color=texture2D(patch,uv);
+  if(uv.x>=0. && uv.x<=1. && uv.y>=0. && uv.y<=1.) {
+   vec3 rgb = texture2D(patch,uv).rgb;
+   float peak = max(rgb.r,max(rgb.g,rgb.b));
+   rgb *= exp2(exposure) / (1. + highlights * peak * peak);
+   rgb = pow(clamp(rgb,0.,1.), vec3(1./gamma));
+   color.rgb = clamp(mix(vec3(dot(rgb,vec3(.2126,.7152,.0722))),rgb,saturation),0.,1.);
+  }
  }
  gl_FragColor=vec4(color.rgb,1.);
 }`;
 
-interface Props { basis: ViewBasis; fov: number; width: number; height: number; lat: number; lon: number; date: Date; hips: HipsBackground }
+interface Props { basis: ViewBasis; fov: number; width: number; height: number; lat: number; lon: number; date: Date; hips: HipsBackground; quality: ImageQuality }
 export function SurveyBackground(props: Props) {
  const ref=useRef<HTMLCanvasElement>(null);
  const renderer=useRef<{gl: WebGLRenderingContext; program: WebGLProgram; patch: WebGLTexture; image: HTMLImageElement | HTMLCanvasElement | null} | null>(null);
@@ -48,7 +57,7 @@ export function SurveyBackground(props: Props) {
  },[]);
  useEffect(()=>{
   const r=renderer.current;if(!r)return;
-  const {gl,program}=r, {basis,fov,width,height,lat,lon,date,hips}=props;
+  const {gl,program}=r, {basis,fov,width,height,lat,lon,date,hips,quality}=props;
   gl.viewport(0,0,width,height);gl.useProgram(program);
   const v=(name:string,value:number[])=>gl.uniform3fv(gl.getUniformLocation(program,name),value);
   const f=(name:string,value:number)=>gl.uniform1f(gl.getUniformLocation(program,name),value);
@@ -60,6 +69,13 @@ export function SurveyBackground(props: Props) {
   v("patchEast",[-Math.sin(ra),Math.cos(ra),0]);v("patchNorth",[-Math.sin(dec)*Math.cos(ra),-Math.sin(dec)*Math.sin(ra),Math.cos(dec)]);
   f("patchTangent",Math.tan(hips.fovDeg*Math.PI/360));
   if(hips.img && hips.img!==r.image){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,r.patch);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,hips.img);r.image=hips.img;}
+  f("exposure", quality.exposure); f("highlights", quality.highlights);
+  f("gamma", quality.gamma); f("saturation", quality.saturation);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, r.patch);
+  const filter = quality.smooth ? gl.LINEAR : gl.NEAREST;
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
   gl.drawArrays(gl.TRIANGLES,0,6);
  },[props]);
  return <><canvas aria-label="DSS2 sky photography" ref={ref} width={props.width} height={props.height} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>{error && <div className="hd-loading" role="alert">DSS2 imagery requires WebGL.</div>}</>;

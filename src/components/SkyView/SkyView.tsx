@@ -76,7 +76,9 @@ export function SkyView() {
     round10(centerEq.raHours * 15),
     round10(centerEq.decDeg),
     round10(surveyFov),
-    compactViewport ? 1024 : 2048,
+    sky.quality.textureSize || (compactViewport ? 1024 : 2048),
+    sky.quality.localPack && sky.quality.textureSize === 0 && sky.quality.maxOrder === 9,
+    sky.quality.maxOrder,
   );
   const horizontal = useMemo(() => {
     const convert = (ra: number, dec: number) => raDecToAltAz(ra, dec, observer.latDeg, observer.lonDegEast, observer.date);
@@ -92,7 +94,7 @@ export function SkyView() {
     const parent = canvas.parentElement;
     const fit = () => {
       const rect = parent.getBoundingClientRect();
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const dpr = Math.min(sky.quality.pixelRatio, window.devicePixelRatio || 1);
       const w = Math.max(1, Math.floor(rect.width * dpr));
       const h = Math.max(1, Math.floor(rect.height * dpr));
       canvas.width = w;
@@ -103,7 +105,7 @@ export function SkyView() {
     const ro = new ResizeObserver(fit);
     ro.observe(parent);
     return () => ro.disconnect();
-  }, []);
+  }, [sky.quality.pixelRatio]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -568,7 +570,7 @@ export function SkyView() {
 
   return (
     <>
-      {sky.showBackground && <SurveyBackground basis={basis} fov={sky.fovDeg} width={size.w} height={size.h} lat={observer.latDeg} lon={observer.lonDegEast} date={observer.date} hips={hips} />}
+      {sky.showBackground && <SurveyBackground basis={basis} fov={sky.fovDeg} width={size.w} height={size.h} lat={observer.latDeg} lon={observer.lonDegEast} date={observer.date} hips={hips} quality={sky.quality} />}
       <canvas
         ref={canvasRef}
         style={{ position: "relative", width: "100%", height: "100%", display: "block", touchAction: "none", cursor: "grab" }}
