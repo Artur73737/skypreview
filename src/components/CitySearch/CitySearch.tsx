@@ -30,11 +30,11 @@ export function CitySearch({ onPick }: { onPick: (city: CityResult) => void }) {
       <input
         value={query}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Cerca citta nel mondo..."
-        aria-label="Cerca citta"
+        placeholder="Search cities worldwide…"
+        aria-label="Search cities"
         style={inputStyle}
       />
-      {loading && <p style={hintStyle}>Cerco...</p>}
+      {loading && <p style={hintStyle}>Searching…</p>}
       <ul style={{ listStyle: "none", margin: "6px 0 0", padding: 0 }}>
         {hits.map((h) => (
           <li key={`${h.latDeg},${h.lonDegEast}`}>

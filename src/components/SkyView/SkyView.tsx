@@ -93,8 +93,8 @@ export function SkyView() {
     const fit = () => {
       const rect = parent.getBoundingClientRect();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const w = Math.max(300, Math.floor(rect.width * dpr));
-      const h = Math.max(300, Math.floor(rect.height * dpr));
+      const w = Math.max(1, Math.floor(rect.width * dpr));
+      const h = Math.max(1, Math.floor(rect.height * dpr));
       canvas.width = w;
       canvas.height = h;
       setSize({ w, h, dpr });
@@ -506,7 +506,7 @@ export function SkyView() {
         selected: {
           kind: "solar",
           label: solarBody.label,
-          sub: `${solarBody.definition.kind === "moon" ? "Satellite" : "Pianeta"} · magnitudine ${solarBody.magnitude.toFixed(1)}`,
+          sub: `${solarBody.definition.kind === "moon" ? "Satellite" : "Planet"} · magnitude ${solarBody.magnitude.toFixed(1)}`,
           raHours: solarBody.raHours,
           decDeg: solarBody.decDeg,
           mag: solarBody.magnitude,
@@ -578,8 +578,8 @@ export function SkyView() {
         onPointerCancel={onPointerCancel}
         onWheel={onWheel}
       />
-      {sky.showBackground && hips.loading && <div className="hd-loading" role="status">DSS2 · caricamento dettagli…</div>}
-      {sky.showBackground && hips.error && <div className="hd-loading" role="alert">{hips.error} <button onClick={hips.retry}>Riprova</button></div>}
+      {sky.showBackground && hips.loading && <div className="hd-loading" role="status">DSS2 · loading imagery…</div>}
+      {sky.showBackground && hips.error && <div className="hd-loading" role="alert">{hips.error} <button onClick={hips.retry}>Retry</button></div>}
     </>
   );
 }

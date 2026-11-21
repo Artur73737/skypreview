@@ -93,45 +93,45 @@ export function getTexturedDisk(
   return disk;
 }
 
+const phaseMasks = new Map<string, HTMLCanvasElement>();
+
 function drawPhaseShadow(
   context: CanvasRenderingContext2D,
   radiusPx: number,
   phaseFraction: number,
   sunAngleRad: number,
 ): void {
-  if (phaseFraction > 0.995) return;
-  const cosPhase = Math.max(-1, Math.min(1, 2 * phaseFraction - 1));
-  context.save();
-  context.rotate(sunAngleRad);
-  context.beginPath();
-  context.arc(0, 0, radiusPx, Math.PI / 2, (3 * Math.PI) / 2, false);
-  if (cosPhase >= 0) {
-    context.ellipse(
-      0,
-      0,
-      radiusPx * cosPhase,
-      radiusPx,
-      0,
-      (3 * Math.PI) / 2,
-      Math.PI / 2,
-      true,
-    );
-  } else {
-    context.ellipse(
-      0,
-      0,
-      -radiusPx * cosPhase,
-      radiusPx,
-      0,
-      -Math.PI / 2,
-      Math.PI / 2,
-      false,
-    );
+  const phase = Math.round(phaseFraction * 256);
+  const angle = Math.round(sunAngleRad * 128);
+  const key = `${phase}:${angle}`;
+  let mask = phaseMasks.get(key);
+  const size = 256;
+  if (!mask) {
+    mask = document.createElement("canvas");
+    mask.width = mask.height = size;
+    const ctx = mask.getContext("2d");
+    if (!ctx) return;
+    const data = ctx.createImageData(size, size);
+    const z = 2 * phase / 256 - 1;
+    const lateral = Math.sqrt(1 - z * z);
+    const sx = Math.cos(angle / 128) * lateral;
+    const sy = Math.sin(angle / 128) * lateral;
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const nx = (x + 0.5) * 2 / size - 1;
+        const ny = (y + 0.5) * 2 / size - 1;
+        const r2 = nx * nx + ny * ny;
+        if (r2 >= 1) continue;
+        const incidence = nx * sx + ny * sy + Math.sqrt(1 - r2) * z;
+        const light = Math.max(0, incidence);
+        data.data[(y * size + x) * 4 + 3] = 255 * (1 - Math.sqrt(light));
+      }
+    }
+    ctx.putImageData(data, 0, 0);
+    if (phaseMasks.size >= 24) phaseMasks.delete(phaseMasks.keys().next().value!);
+    phaseMasks.set(key, mask);
   }
-  context.closePath();
-  context.fillStyle = "rgba(2,4,9,0.92)";
-  context.fill();
-  context.restore();
+  context.drawImage(mask, -radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
 }
 
 function ringProfile(image: HTMLImageElement): Float32Array {
@@ -219,8 +219,8 @@ export function drawTexturedBody(
   }
   context.globalAlpha = options.opacity;
   context.drawImage(disk, -radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
-  context.globalAlpha = 1;
   drawPhaseShadow(context, radiusPx, options.phaseFraction, options.sunAngleRad);
+  context.globalAlpha = 1;
   if (hasRing) {
     drawRingHalf(
       context,

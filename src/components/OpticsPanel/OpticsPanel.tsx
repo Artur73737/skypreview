@@ -23,20 +23,20 @@ export function OpticsPanel() {
   };
   const eff = optics.focalMm * optics.barlow;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    <div style={sectionTitle}>Picker rapido · {TELESCOPE_PRESETS.length} telescopi</div>
-    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Cerca Askar, C8, 150/750…" aria-label="Cerca telescopio" style={input} />
-    <div style={pickerList} role="listbox" aria-label="Preset telescopi">
-      {filtered.map(p => <button key={p.id} onClick={() => choose(p)} style={pickerRow(optics.model === p.name)}>
+    <div style={sectionTitle}>Presets · {TELESCOPE_PRESETS.length} telescopes</div>
+    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search Askar, C8, 150/750…" aria-label="Search telescopeso" style={input} />
+    <div style={pickerList} role="group" aria-label="Preset telescopes">
+      {filtered.map(p => <button key={p.id} aria-pressed={optics.model === p.name} onClick={() => choose(p)} style={pickerRow(optics.model === p.name)}>
         <span><b>{p.name}</b> <small>{p.brand}</small></span>
-        <span>{p.apertureMm} mm · {p.focalMm} mm · {p.focalRatio} · {p.resolutionArcsec.toFixed(2)}″{p.integratedCamera ? " · camera integrata" : ""}</span>
+        <span>{p.apertureMm} mm · {p.focalMm} mm · {p.focalRatio} · {p.resolutionArcsec.toFixed(2)}″{p.integratedCamera ? " · integrated camera" : ""}</span>
       </button>)}
     </div>
-    <div style={sectionTitle}>Parametri personalizzati · {optics.model}</div>
-    <NumberField label="Lunghezza focale (mm)" value={optics.focalMm} onChange={focalMm => set({ model: "Personalizzato", focalMm })} />
-    <NumberField label="Apertura (mm)" value={optics.apertureMm} onChange={apertureMm => set({ model: "Personalizzato", apertureMm })} />
-    <NumberField label="Barlow / riduttore (fattore)" value={optics.barlow} onChange={barlow => set({ barlow })} />
-    <p style={hint}>1 = nessuna lente · 0,7 = riduttore · 2 = Barlow 2×</p>
-    <p style={hint}>Focale effettiva {eff.toLocaleString("it")} mm · f/{(eff / optics.apertureMm).toFixed(2)}</p>
+    <div style={sectionTitle}>Manual settings · {optics.model}</div>
+    <NumberField label="Focal length (mm)" value={optics.focalMm} onChange={focalMm => set({ model: "Custom", focalMm })} />
+    <NumberField label="Aperture (mm)" value={optics.apertureMm} onChange={apertureMm => set({ model: "Custom", apertureMm })} />
+    <NumberField label="Barlow / reducer factor" value={optics.barlow} onChange={barlow => set({ barlow })} />
+    <p style={hint}>1 = no multiplier · 0.7 = reducer · 2 = Barlow 2×</p>
+    <p style={hint}>Effective focal length {eff.toLocaleString("en")} mm · f/{(eff / optics.apertureMm).toFixed(2)}</p>
   </div>;
 }
 const sectionTitle: React.CSSProperties = { fontSize: 12, textTransform: "uppercase", letterSpacing: ".06em", color: "#94a3b8" };

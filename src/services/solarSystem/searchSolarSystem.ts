@@ -17,7 +17,7 @@ export function searchSolarBodies(
     .map((body) => ({
       kind: "solar" as const,
       label: body.label,
-      sub: `${body.definition.kind === "moon" ? "Satellite" : "Pianeta"} · magnitudine ${body.magnitude.toFixed(1)} · altezza ${body.altDeg.toFixed(1)}°`,
+      sub: `${body.definition.kind === "moon" ? "Satellite" : "Planet"} · magnitude ${body.magnitude.toFixed(1)} · altitude ${body.altDeg.toFixed(1)}°`,
       raHours: body.raHours,
       decDeg: body.decDeg,
       mag: body.magnitude,

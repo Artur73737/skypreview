@@ -52,7 +52,7 @@ export const TELESCOPE_PRESETS: TelescopePreset[] = [
   },
   { id: "askar-71f", name: "Askar 71F", brand: "Askar", apertureMm: 71, focalMm: 490, focalRatio: "f/6.9", resolutionArcsec: 1.64, type: "Quadruplet APO flat-field", notes: "Cerchio immagine 44 mm, full-frame ready, self-flattened" },
   { id: "newton-150-750", name: "N 150/750", brand: "Sky-Watcher / Bresser / TS-Photon", apertureMm: 150, focalMm: 750, focalRatio: "f/5", resolutionArcsec: 0.77, type: "Newton parabolico", notes: "Ottimo rapporto luce/prezzo per visuale e astrofotografia entry-level" },
-  { id: "capricorn-70", name: "Sky-Watcher Capricorn-70", brand: "Sky-Watcher", apertureMm: 70, focalMm: 900, focalRatio: "f/12.8", resolutionArcsec: 1.66, type: "Achromat", notes: "Focale lunga per Luna e pianeti" },
+  { id: "capricorn-70", name: "Sky-Watcher Capricorn-70", brand: "Sky-Watcher", apertureMm: 70, focalMm: 900, focalRatio: "f/12.8", resolutionArcsec: 1.66, type: "Achromat", notes: "Focale lunga per Moon and planets" },
   { id: "redcat-51", name: "William Optics RedCat 51", brand: "William Optics", apertureMm: 51, focalMm: 250, focalRatio: "f/4.9", resolutionArcsec: 2.28, type: "Petzval APO wide-field", notes: "Campo largo" },
   { id: "askar-fra-300", name: "Askar FRA300", brand: "Askar", apertureMm: 60, focalMm: 300, focalRatio: "f/5", resolutionArcsec: 1.9, type: "Flat-field APO", notes: "Serie FRA: 300 / 400 / 500 mm" },
   { id: "askar-fra-400", name: "Askar FRA400", brand: "Askar", apertureMm: 72, focalMm: 400, focalRatio: "f/5.6", resolutionArcsec: 1.6, type: "Flat-field APO", notes: "Serie FRA" },
@@ -83,7 +83,7 @@ export const SMART_TELESCOPE_PRESETS: SmartTelescopePreset[] = TELESCOPE_PRESETS
 const zwo: CameraPreset[] = [
   ["ASI662MC",1920,1080,2.9,2.1,"~199 USD"], ["ASI664MC",2704,1536,2.9,4.15,"~300–349 USD"], ["ASI715MC",3864,2192,1.45,8.5,"~229 USD"], ["ASI678MC",3840,2160,2,8.3,"~314–350 USD"], ["ASI585MC",3840,2160,2.9,8.3,"~399 USD"], ["ASI585MC Pro",3840,2160,2.9,8.3,"~599 USD"], ["ASI676MC",3552,3552,2,12.6,"~399 USD"], ["ASI533MC Pro",3008,3008,3.76,9,"~799 USD"], ["ASI294MC Pro",4144,2822,4.63,11.7,"~999–1100 USD"], ["ASI2600MC Pro",6248,4176,3.76,26,"~1499 USD"], ["ASI2600MM Pro",6248,4176,3.76,26,"~1999 USD"], ["ASI6200MC Pro",9576,6388,3.76,61,"~3800–4000 USD"], ["ASI6200MM Pro",9576,6388,3.76,61,"~3800–4000 USD"], ["ASI4400MC Pro",10000,4400,4.4,44,"~2999 USD"], ["ASI120MM Mini",1280,960,3.75,1.23,"~230 EUR"], ["ASI174MM",1936,1216,5.86,2.35,"~500–600 USD"], ["ASI183MC/MM Pro",5496,3672,2.4,20.18,"~800–1000 USD"], ["ASI482MC",1920,1080,5.8,2.1,"~349 USD"],
 ].map(([name,x,y,px,mp,price]) => ({ id: `zwo-${String(name).toLowerCase().replace(/[^a-z0-9]+/g,"-")}`, name: String(name), brand: "ZWO", resXpx: Number(x), resYpx: Number(y), pixelUm: Number(px), megapixels: Number(mp), price: String(price) }));
-zwo.push({ id: "canon-eos-1100d", name: "Canon EOS 1100D", brand: "Canon", resXpx: 4272, resYpx: 2848, pixelUm: 5.2, megapixels: 12.2, price: "Usata / variabile", notes: "APS-C DSLR; risoluzione ufficiale 4272×2848" });
+zwo.push({ id: "canon-eos-1100d", name: "Canon EOS 1100D", brand: "Canon", resXpx: 4272, resYpx: 2848, pixelUm: 5.2, megapixels: 12.2, price: "Used / varies", notes: "APS-C DSLR; risoluzione ufficiale 4272×2848" });
 zwo.push({
   id: "zwo-seestar-s30-plus",
   name: seestarS30PlusSensor.model,
@@ -93,7 +93,7 @@ zwo.push({
   pixelUm: seestarS30PlusSensor.pixelUm,
   megapixels: 3.7,
   price: "integrata",
-  notes: "Sensore tele 1/1.8″ della Seestar S30 Plus",
+  notes: "Sensor tele 1/1.8″ della Seestar S30 Plus",
 });
 const svbony: CameraPreset[] = [
   ["SV505C",2712,1538,2.9,4.2,"~150–200 USD"], ["SV705C",3856,2180,2.9,8.3,"~280–350 USD"], ["SC715C",3864,2192,1.45,8.5,"~200–250 USD"], ["SV405CC",4144,2822,4.63,11.7,"~700–850 USD"], ["SV605CC",3008,3008,3.76,9,"~510–650 USD"], ["SV605MC",3008,3008,3.76,9,"~650–800 USD"], ["SC571CC",6224,4168,3.76,26,"~1300–1500 USD"],

@@ -1,6 +1,9 @@
 import type { Body } from "astronomy-engine";
 
+export type GalileanMoonId = "io" | "europa" | "ganymede" | "callisto";
+
 export type SolarBodyId =
+  | GalileanMoonId
   | "moon"
   | "mercury"
   | "venus"
@@ -13,6 +16,7 @@ export type SolarBodyId =
 export interface SolarBodyDefinition {
   id: SolarBodyId;
   body: Body;
+  satellite?: GalileanMoonId;
   label: string;
   englishName: string;
   aliases: string[];

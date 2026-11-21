@@ -34,7 +34,7 @@ export interface CatalogBundle {
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Catalogo non caricato: ${url} (${res.status})`);
+  if (!res.ok) throw new Error(`Could not load catalog: ${url} (${res.status})`);
   return res.json() as Promise<T>;
 }
 
@@ -72,7 +72,7 @@ export function searchCatalogs(
       hits.push({
         kind: "star",
         label: s.name,
-        sub: `Stella mag ${s.mag.toFixed(1)}`,
+        sub: `Star mag ${s.mag.toFixed(1)}`,
         raHours: s.raHours,
         decDeg: s.decDeg,
         mag: s.mag,

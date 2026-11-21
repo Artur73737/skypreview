@@ -70,7 +70,7 @@ export function useHipsBackground(
             ...s,
             loading: false,
             error:
-              "Texture DSS2 non disponibile per questa vista. Riprova per caricarla in alta risoluzione.",
+              "DSS2 imagery is unavailable for this view.",
           }));
         }
       }

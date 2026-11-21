@@ -9,6 +9,6 @@ export function NumberField({ label, value, onChange, integer = false }: { label
   <input type="number" step={integer ? 1 : "any"} value={draft} aria-invalid={!valid}
    onChange={e => { const text=e.target.value; setDraft(text); const n=Number(text); if(text.trim() && Number.isFinite(n) && n>0 && (!integer || Number.isInteger(n))) onChange(n); }}
    style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1px solid ${valid ? "#334155" : "#fb7185"}`,background:"#111827",color:"#f8fafc"}} />
-  {!valid && <small role="status">Inserisci un numero {integer ? "intero " : ""}maggiore di zero.</small>}
+  {!valid && <small role="status">Enter a positive {integer ? "whole number" : "number"}.</small>}
  </label>;
 }

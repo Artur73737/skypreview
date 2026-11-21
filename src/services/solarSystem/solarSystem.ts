@@ -1,5 +1,12 @@
 import {
   Body,
+  C_AUDAY,
+  EquatorFromVector,
+  JupiterMoons,
+  MakeTime,
+  RotateVector,
+  Rotation_EQJ_EQD,
+  Vector,
   Equator,
   Horizon,
   Illumination,
@@ -18,7 +25,7 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   {
     id: "moon",
     body: Body.Moon,
-    label: "Luna",
+    label: "Moon",
     englishName: "Moon",
     aliases: ["luna", "moon"],
     texture: "2k_moon.jpg",
@@ -29,7 +36,7 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   {
     id: "mercury",
     body: Body.Mercury,
-    label: "Mercurio",
+    label: "Mercury",
     englishName: "Mercury",
     aliases: ["mercurio", "mercury"],
     texture: "2k_mercury.jpg",
@@ -40,7 +47,7 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   {
     id: "venus",
     body: Body.Venus,
-    label: "Venere",
+    label: "Venus",
     englishName: "Venus",
     aliases: ["venere", "venus"],
     texture: "2k_venus_atmosphere.jpg",
@@ -51,7 +58,7 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   {
     id: "mars",
     body: Body.Mars,
-    label: "Marte",
+    label: "Mars",
     englishName: "Mars",
     aliases: ["marte", "mars"],
     texture: "2k_mars.jpg",
@@ -62,7 +69,7 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   {
     id: "jupiter",
     body: Body.Jupiter,
-    label: "Giove",
+    label: "Jupiter",
     englishName: "Jupiter",
     aliases: ["giove", "jupiter"],
     texture: "2k_jupiter.jpg",
@@ -73,7 +80,7 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   {
     id: "saturn",
     body: Body.Saturn,
-    label: "Saturno",
+    label: "Saturn",
     englishName: "Saturn",
     aliases: ["saturno", "saturn"],
     texture: "2k_saturn.jpg",
@@ -84,7 +91,7 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   {
     id: "uranus",
     body: Body.Uranus,
-    label: "Urano",
+    label: "Uranus",
     englishName: "Uranus",
     aliases: ["urano", "uranus"],
     texture: "2k_uranus.jpg",
@@ -95,7 +102,7 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   {
     id: "neptune",
     body: Body.Neptune,
-    label: "Nettuno",
+    label: "Neptune",
     englishName: "Neptune",
     aliases: ["nettuno", "neptune"],
     texture: "2k_neptune.jpg",
@@ -105,9 +112,22 @@ export const SOLAR_BODIES: SolarBodyDefinition[] = [
   },
 ];
 
+const galileanMoons = [
+  ["io", "Io", 1821.6, 5.0],
+  ["europa", "Europa", 1560.8, 5.3],
+  ["ganymede", "Ganymede", 2634.1, 4.6],
+  ["callisto", "Callisto", 2410.3, 5.7],
+] as const;
+for (const [id, label, radiusKm] of galileanMoons) {
+  SOLAR_BODIES.push({
+    id, satellite: id, body: Body.Jupiter, label, englishName: label,
+    aliases: [id], texture: `${id}.jpg`, color: "#d5d0c7", radiusKm, kind: "moon",
+  });
+}
+
 export function solarBodyById(id: SolarBodyId): SolarBodyDefinition {
   const found = SOLAR_BODIES.find((definition) => definition.id === id);
-  if (!found) throw new Error(`Corpo solare sconosciuto: ${id}`);
+  if (!found) throw new Error(`Unknown solar system body: ${id}`);
   return found;
 }
 
@@ -121,7 +141,15 @@ function snapshotFor(
   date: Date,
   observer: Observer,
 ): SolarBodySnapshot {
-  const equator = Equator(definition.body, date, observer, true, true);
+  const jupiter = definition.satellite ? Equator(Body.Jupiter, date, observer, false, true) : null;
+  let equator = Equator(definition.body, date, observer, true, true);
+  if (jupiter && definition.satellite) {
+    const time = MakeTime(date);
+    const offset = JupiterMoons(time.AddDays(-jupiter.dist / C_AUDAY))[definition.satellite];
+    const { x, y, z } = jupiter.vec;
+    equator = EquatorFromVector(RotateVector(Rotation_EQJ_EQD(time),
+      new Vector(x + offset.x, y + offset.y, z + offset.z, time)));
+  }
   const horizontal = Horizon(date, observer, equator.ra, equator.dec);
   const illumination = Illumination(definition.body, date);
   const distanceKm = equator.dist * KM_PER_AU;
@@ -139,7 +167,7 @@ function snapshotFor(
     angularDiameterDeg: angularDiameterDeg(definition.radiusKm, distanceKm),
     phaseFraction: illumination.phase_fraction,
     phaseAngleDeg: illumination.phase_angle,
-    magnitude: illumination.mag,
+    magnitude: galileanMoons.find(([id]) => id === definition.id)?.[3] ?? illumination.mag,
     ringTiltDeg: illumination.ring_tilt ?? null,
     definition,
   };

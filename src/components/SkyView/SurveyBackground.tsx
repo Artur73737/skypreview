@@ -62,5 +62,5 @@ export function SurveyBackground(props: Props) {
   if(hips.img && hips.img!==r.image){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,r.patch);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,hips.img);r.image=hips.img;}
   gl.drawArrays(gl.TRIANGLES,0,6);
  },[props]);
- return <><canvas aria-label="Fotografia del cielo DSS2" ref={ref} width={props.width} height={props.height} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>{error && <div className="hd-loading" role="alert">Sfondo fotografico non disponibile: verifica WebGL.</div>}</>;
+ return <><canvas aria-label="DSS2 sky photography" ref={ref} width={props.width} height={props.height} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>{error && <div className="hd-loading" role="alert">DSS2 imagery requires WebGL.</div>}</>;
 }

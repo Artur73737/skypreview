@@ -40,13 +40,13 @@ export function LocationPanel() {
             onChange={(e) => update({ observer: { ...obs, lonDegEast: Number(e.target.value) } })} />
         </label>
       </div>
-      <button style={chip} onClick={geolocate}>La mia posizione</button>
+      <button style={chip} onClick={geolocate}>Use my location</button>
       <label style={field}>
-        Data e ora
+        Date and time (UTC)
         <input type="datetime-local" style={input}
           value={obs.dateIso.slice(0, 16)}
           onChange={(e) => update({
-            observer: { ...obs, dateIso: new Date(e.target.value).toISOString(), live: false },
+            observer: { ...obs, dateIso: e.target.value ? new Date(e.target.value + "Z").toISOString() : obs.dateIso, live: false },
           })} />
       </label>
       <label style={{ ...field, flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -58,7 +58,7 @@ export function LocationPanel() {
               dateIso: new Date().toISOString(),
             },
           })} />
-        Tempo reale dal PC
+        Use live time
       </label>
     </div>
   );

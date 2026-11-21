@@ -5,7 +5,7 @@ import { basisForView } from "../src/services/viewProjection";
 
 it("places the topocentric Moon near the Sun during the Dallas eclipse", () => {
   const { bodies, sun } = computeSolarSystem(new Date("2024-04-08T18:40:00Z"), 32.7767, -96.797);
-  expect(bodies).toHaveLength(8);
+  expect(bodies).toHaveLength(12);
   const moon = bodies.find(body => body.id === "moon")!;
   expect(moon.raHours).toBeGreaterThan(1);
   expect(moon.raHours).toBeLessThan(1.5);

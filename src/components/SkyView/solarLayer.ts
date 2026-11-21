@@ -22,6 +22,7 @@ const LABEL_PRIORITY: SolarBodyId[] = [
   "mercury",
   "uranus",
   "neptune",
+  "io", "europa", "ganymede", "callisto",
 ];
 
 export interface SolarCamera {
@@ -144,6 +145,7 @@ function drawBody(
   }
 
   if (radiusPx < 1) {
+    if (body.definition.satellite && camera.fovDeg > 2) return;
     drawMarker(context, geometry, camera, opacity);
     return;
   }
@@ -216,7 +218,9 @@ export function drawSolarLayer(
     (a, b) =>
       LABEL_PRIORITY.indexOf(a.body.id) - LABEL_PRIORITY.indexOf(b.body.id),
   );
-  for (const geometry of byPriority) drawLabel(context, geometry, options.camera, options);
+  for (const geometry of byPriority) {
+    if (!geometry.body.definition.satellite || options.camera.fovDeg <= 2) drawLabel(context, geometry, options.camera, options);
+  }
 }
 
 export function pickSolarBody(
@@ -228,6 +232,7 @@ export function pickSolarBody(
   let best: SolarBodySnapshot | null = null;
   let bestScore = Number.POSITIVE_INFINITY;
   for (const body of snapshot.bodies) {
+    if (body.definition.satellite && camera.fovDeg > 2) continue;
     const geometry = solarScreenGeometry(body, camera);
     if (!geometry) continue;
     const distance = Math.hypot(x - geometry.x, y - geometry.y);

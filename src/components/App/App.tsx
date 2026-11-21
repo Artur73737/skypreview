@@ -1,85 +1,58 @@
-import { CameraPanel } from "../CameraPanel";
+import { useEffect, useRef } from "react";
 import { DisplayControls } from "../DisplayControls";
 import { Dock } from "../Dock";
 import { FovPanel } from "../FovPanel";
 import { LocationPanel } from "../LocationPanel";
 import { ObjectDetail } from "../ObjectDetail";
-import { OpticsPanel } from "../OpticsPanel";
 import { SearchPanel } from "../SearchPanel";
 import { SkyView } from "../SkyView";
 import { useSkyStore, SkyStoreProvider } from "../../store/skyStore";
-import { useObserver } from "../../hooks/useObserver";
 
-const TITLES = {
-  search: "Ricerca oggetti",
-  view: "Layer della mappa",
-  optics: "Telescopio e Barlow",
-  camera: "Camera",
-  fov: "Campo inquadrato",
-  location: "Posizione",
-  object: "Oggetto",
+const TOOLS = {
+  search: { title: "Find an object", View: SearchPanel },
+  view: { title: "Map layers", View: DisplayControls },
+  fov: { title: "Field of view", View: FovPanel },
+  location: { title: "Observer", View: LocationPanel },
+  object: { title: "Object details", View: ObjectDetail },
 } as const;
 
 function Layout() {
-  const { sky, catalogs, catalogLoading, catalogError, setPanel } = useSkyStore();
-  const obs = useObserver(sky.observer.latDeg, sky.observer.lonDegEast, sky.observer.dateIso);
+  const { sky, catalogError, setPanel } = useSkyStore();
+  const panel = sky.activePanel === "optics" || sky.activePanel === "camera" ? "fov" : sky.activePanel;
+  const tool = panel ? TOOLS[panel] : null;
+  const dialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const element = dialog.current;
+    if (tool && element && !element.open) element.showModal();
+    if (!tool && element?.open) element.close();
+  }, [tool]);
+
   return (
     <div className="app">
-      <main className="viewport">
-        <SkyView />
-        {sky.activePanel && (
-          <aside className="panel">
-            <div className="panel-head">
-              <span>{TITLES[sky.activePanel]}</span>
-              <button className="panel-close" onClick={() => setPanel(null)} aria-label="Chiudi">
-                ×
-              </button>
-            </div>
-            <div className="panel-body">
-              {sky.activePanel === "search" && <SearchPanel />}
-              {sky.activePanel === "view" && <DisplayControls />}
-              {sky.activePanel === "optics" && <OpticsPanel />}
-              {sky.activePanel === "camera" && <CameraPanel />}
-              {sky.activePanel === "fov" && <FovPanel />}
-              {sky.activePanel === "location" && <LocationPanel />}
-              {sky.activePanel === "object" && <ObjectDetail />}
-            </div>
-          </aside>
-        )}
-      </main>
+      <main className="viewport" aria-label="Sky map"><SkyView /></main>
       <header className="topbar">
-        <div>
-          <div className="title">SkyPreview</div>
-          <div className="subtitle">
-            {catalogLoading && "Scarico cataloghi reali..."}
-            {catalogError && `Errore cataloghi: ${catalogError}`}
-            {!catalogLoading && !catalogError && catalogs && (
-              <>
-                {catalogs.stars.length.toLocaleString("it")} stelle ·{" "}
-                {catalogs.dso.length.toLocaleString("it")} DSO ·{" "}
-                {catalogs.constellations.length} costellazioni
-              </>
-            )}
-          </div>
-        </div>
-        <div className="status">
-          {sky.fovDeg < 10 ? sky.fovDeg.toFixed(1) : sky.fovDeg.toFixed(0)}° · LST{" "}
-          {obs.lstHours.toFixed(2)}h · {sky.observer.latDeg.toFixed(1)}°{" "}
-          {sky.observer.lonDegEast.toFixed(1)}°
-        </div>
+        <div className="title">SkyPreview</div>
+        <output className="status" aria-label="Map zoom">{sky.fovDeg < 0.1 ? `${(sky.fovDeg * 3600).toFixed(1)}″` : `${sky.fovDeg.toFixed(1)}°`}</output>
       </header>
+      {catalogError && <p className="catalog-error" role="alert">{catalogError}</p>}
       <Dock />
-      <footer className="credits">
-        HYG · OpenNGC CC-BY-SA · Stellarium · DSS2 CDS · ESO/S. Brunier
-      </footer>
+      <dialog ref={dialog} className={`tool-dialog ${panel === "fov" ? "tool-dialog-wide" : ""}`}
+        aria-labelledby="tool-title"
+        onCancel={event => { event.preventDefault(); setPanel(null); }}
+        onClick={event => { if (event.target === event.currentTarget) setPanel(null); }}>
+        {tool && <div className="dialog-content">
+          <header className="panel-head">
+            <h2 id="tool-title">{tool.title}</h2>
+            <button onClick={() => setPanel(null)} aria-label="Close dialog">×</button>
+          </header>
+          <div className="panel-body"><tool.View /></div>
+        </div>}
+      </dialog>
     </div>
   );
 }
 
 export function App() {
-  return (
-    <SkyStoreProvider>
-      <Layout />
-    </SkyStoreProvider>
-  );
+  return <SkyStoreProvider><Layout /></SkyStoreProvider>;
 }

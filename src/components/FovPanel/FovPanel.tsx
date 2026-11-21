@@ -1,3 +1,5 @@
+import { OpticsPanel } from "../OpticsPanel";
+import { CameraPanel } from "../CameraPanel";
 import { SMART_TELESCOPE_PRESETS, type SmartTelescopePreset } from "../../data/equipment";
 import { useFovSetup } from "../../hooks/useFovSetup";
 import { altAzToRaDec } from "../../services/astroMath";
@@ -40,6 +42,7 @@ export function FovPanel() {
 
   const addToView = () =>
     update({
+      activePanel: null,
       fovs: [
         ...sky.fovs,
         buildFovBox(
@@ -69,6 +72,7 @@ export function FovPanel() {
         pixelUm: camera.pixelUm,
       },
       fovDeg: Math.max(0.3, Math.min(sky.fovDeg, presetFov.diagonalDeg * 2.5)),
+      activePanel: null,
       fovs: [
         ...sky.fovs.filter((box) => box.label !== preset.name),
         buildFovBox(preset.name, presetFov.widthDeg, presetFov.heightDeg),
@@ -77,23 +81,30 @@ export function FovPanel() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <QuickFovPreview onPreview={previewSmartTelescope} />
+    <div className="fov-workspace">
       <div style={caption}>
         {sky.optics.model}
         {sky.camera.model !== integratedCameraModel ? ` + ${sky.camera.model}` : ""}
       </div>
       <div style={grid}>
-        <Stat label="Larghezza" value={`${fov.widthDeg.toFixed(2)}°`} />
-        <Stat label="Altezza" value={`${fov.heightDeg.toFixed(2)}°`} />
-        <Stat label="Diagonale" value={`${fov.diagonalDeg.toFixed(2)}°`} />
-        <Stat label="Campionamento" value={`${fov.samplingArcsecPx.toFixed(2)}″/px`} />
-        <Stat label="Risoluzione teorica" value={`${theoreticalResolution.toFixed(2)}″`} />
+        <Stat label="Width" value={`${fov.widthDeg.toFixed(2)}°`} />
+        <Stat label="Height" value={`${fov.heightDeg.toFixed(2)}°`} />
+        <Stat label="Diagonal" value={`${fov.diagonalDeg.toFixed(2)}°`} />
+        <Stat label="Image scale" value={`${fov.samplingArcsecPx.toFixed(2)}″/px`} />
+        <Stat label="Dawes limit" value={`${theoreticalResolution.toFixed(2)}″`} />
       </div>
-      <button style={primary} onClick={addToView}>
-        Add to view
+      <button className="fov-primary" style={primary} onClick={addToView}>
+        Add frame to sky
       </button>
-      <p style={hint}>Il rettangolo compare al centro e si trascina con il mouse o con il dito.</p>
+      <p style={hint}>Drag the frame on the sky to reposition it.</p>
+      <div className="equipment-grid">
+        <details><summary>Telescope</summary><OpticsPanel /></details>
+        <details><summary>Camera</summary><CameraPanel /></details>
+      </div>
+      <details className="smart-presets">
+        <summary>Smart telescope presets</summary>
+        <QuickFovPreview onPreview={previewSmartTelescope} />
+      </details>
       {sky.fovs.map((box) => (
         <div key={box.id} style={row}>
           <span>{box.label} · {box.widthDeg.toFixed(2)}°×{box.heightDeg.toFixed(2)}°</span>
@@ -101,7 +112,7 @@ export function FovPanel() {
             style={ghost}
             onClick={() => update({ fovs: sky.fovs.filter((f) => f.id !== box.id) })}
           >
-            Rimuovi
+            Remove
           </button>
         </div>
       ))}

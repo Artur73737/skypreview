@@ -9,7 +9,6 @@ export function QuickFovPreview({ onPreview }: QuickFovPreviewProps) {
   if (SMART_TELESCOPE_PRESETS.length === 0) return null;
   return (
     <div style={wrapper}>
-      <div style={title}>Anteprima rapida · telescopi smart</div>
       {SMART_TELESCOPE_PRESETS.map((preset) => {
         const camera = preset.integratedCamera;
         const fov = computeFov(
@@ -25,7 +24,7 @@ export function QuickFovPreview({ onPreview }: QuickFovPreviewProps) {
             key={preset.id}
             style={button}
             onClick={() => onPreview(preset)}
-            title="Imposta ottica e camera e mostra il campo nella vista"
+            title="Apply preset and add its frame to the sky"
           >
             <span style={name}>{preset.name}</span>
             <span style={detail}>
@@ -40,7 +39,6 @@ export function QuickFovPreview({ onPreview }: QuickFovPreviewProps) {
 }
 
 const wrapper: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 6 };
-const title: React.CSSProperties = { fontSize: 12, textTransform: "uppercase", letterSpacing: ".06em", color: "#94a3b8" };
 const button: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",

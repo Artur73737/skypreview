@@ -2,17 +2,17 @@ import { MIN_FOV_DEG, MAX_FOV_DEG } from "../SkyView/pinch";
 import { useSkyStore } from "../../store/skyStore";
 
 const ROWS: { key: "showStars" | "showEqGrid" | "showAzGrid" | "showConstellations" | "showStarNames" | "showDso" | "showDsoNames" | "showCardinal" | "showHorizon" | "showBackground" | "hdPhotos" | "showSolarSystem"; label: string }[] = [
-  { key: "showBackground", label: "Fotografie DSS2 (tutto il cielo)" },
-  { key: "showSolarSystem", label: "Luna e pianeti" },
-  { key: "showEqGrid", label: "Griglia equatoriale" },
-  { key: "showAzGrid", label: "Griglia altazimutale" },
-  { key: "showConstellations", label: "Costellazioni" },
-  { key: "showStars", label: "Stelle del catalogo" },
-  { key: "showStarNames", label: "Nomi stelle" },
-  { key: "showDso", label: "Simboli deep sky" },
-  { key: "showDsoNames", label: "Nomi oggetti" },
-  { key: "showCardinal", label: "Punti cardinali" },
-  { key: "showHorizon", label: "Orizzonte locale" },
+  { key: "showBackground", label: "DSS2 photography" },
+  { key: "showSolarSystem", label: "Solar system" },
+  { key: "showEqGrid", label: "Equatorial grid" },
+  { key: "showAzGrid", label: "Altitude–azimuth grid" },
+  { key: "showConstellations", label: "Constellations" },
+  { key: "showStars", label: "Catalog stars" },
+  { key: "showStarNames", label: "Star names" },
+  { key: "showDso", label: "Deep-sky markers" },
+  { key: "showDsoNames", label: "Object names" },
+  { key: "showCardinal", label: "Compass points" },
+  { key: "showHorizon", label: "Local horizon" },
 ];
 
 export function DisplayControls() {
@@ -30,7 +30,7 @@ export function DisplayControls() {
         </label>
       ))}
       <label style={labelStyle}>
-        Campo {sky.fovDeg < 0.1 ? `${(sky.fovDeg * 3600).toFixed(1)}″` : sky.fovDeg < 10 ? `${sky.fovDeg.toFixed(1)}°` : `${sky.fovDeg.toFixed(0)}°`}
+        Zoom {sky.fovDeg < 0.1 ? `${(sky.fovDeg * 3600).toFixed(1)}″` : sky.fovDeg < 10 ? `${sky.fovDeg.toFixed(1)}°` : `${sky.fovDeg.toFixed(0)}°`}
         <input
           type="range"
           min={Math.log10(MIN_FOV_DEG)}

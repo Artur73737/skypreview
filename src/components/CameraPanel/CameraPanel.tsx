@@ -12,19 +12,19 @@ export function CameraPanel() {
   const set = (patch: Partial<typeof cam>) => update({ camera: { ...cam, ...patch } });
   const choose = (preset: CameraPreset) => set({ model: preset.name, resXpx: preset.resXpx, resYpx: preset.resYpx, pixelUm: preset.pixelUm });
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    <div style={sectionTitle}>Picker rapido · {CAMERA_PRESETS.length} camere</div>
-    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Cerca ASI585, 2600, SV605…" aria-label="Cerca camera" style={input} />
-    <div style={pickerList} role="listbox" aria-label="Preset camere">
-      {filtered.map(p => <button key={p.id} onClick={() => choose(p)} style={pickerRow(cam.model === p.name)}>
+    <div style={sectionTitle}>Presets · {CAMERA_PRESETS.length} cameras</div>
+    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search ASI585, 2600, SV605…" aria-label="Search camera" style={input} />
+    <div style={pickerList} role="group" aria-label="Preset cameras">
+      {filtered.map(p => <button key={p.id} aria-pressed={cam.model === p.name} onClick={() => choose(p)} style={pickerRow(cam.model === p.name)}>
         <span><b>{p.name}</b> <small>{p.brand}</small></span>
         <span>{p.resXpx}×{p.resYpx} · {p.pixelUm} µm · {p.price}</span>
       </button>)}
     </div>
-    <div style={sectionTitle}>Parametri personalizzati · {cam.model}</div>
-    <NumberField label="Risoluzione X (pixel)" integer value={cam.resXpx} onChange={resXpx => set({ model: "Personalizzata", resXpx })} />
-    <NumberField label="Risoluzione Y (pixel)" integer value={cam.resYpx} onChange={resYpx => set({ model: "Personalizzata", resYpx })} />
-    <NumberField label="Dimensione pixel (µm)" value={cam.pixelUm} onChange={pixelUm => set({ model: "Personalizzata", pixelUm })} />
-    <p style={hint}>Sensore {sensorSizeMm(cam.resXpx, cam.pixelUm).toFixed(2)} × {sensorSizeMm(cam.resYpx, cam.pixelUm).toFixed(2)} mm</p>
+    <div style={sectionTitle}>Manual settings · {cam.model}</div>
+    <NumberField label="Width (pixel)" integer value={cam.resXpx} onChange={resXpx => set({ model: "Custom", resXpx })} />
+    <NumberField label="Height (pixel)" integer value={cam.resYpx} onChange={resYpx => set({ model: "Custom", resYpx })} />
+    <NumberField label="Pixel size (µm)" value={cam.pixelUm} onChange={pixelUm => set({ model: "Custom", pixelUm })} />
+    <p style={hint}>Sensor {sensorSizeMm(cam.resXpx, cam.pixelUm).toFixed(2)} × {sensorSizeMm(cam.resYpx, cam.pixelUm).toFixed(2)} mm</p>
   </div>;
 }
 const sectionTitle: React.CSSProperties = { fontSize: 12, textTransform: "uppercase", letterSpacing: ".06em", color: "#94a3b8" };

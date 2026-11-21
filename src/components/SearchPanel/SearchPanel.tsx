@@ -21,13 +21,13 @@ export function SearchPanel() {
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Cerca M31, Vega, Giove…"
-        aria-label="Ricerca oggetti"
+        placeholder="Search M31, Vega, Jupiter…"
+        aria-label="Find an object"
         style={inputStyle}
       />
-      {catalogLoading && <p style={hintStyle}>Carico cataloghi reali...</p>}
+      {catalogLoading && <p style={hintStyle}>Loading catalogs…</p>}
       {!catalogLoading && query.trim().length >= 2 && hits.length === 0 && (
-        <p style={hintStyle}>Nessun oggetto trovato.</p>
+        <p style={hintStyle}>No objects found.</p>
       )}
       <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0 }}>
         {hits.map((h) => (

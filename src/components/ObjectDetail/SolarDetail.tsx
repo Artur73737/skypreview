@@ -14,8 +14,8 @@ interface SolarDetailProps {
 }
 
 function formatDistance(distanceAu: number, distanceKm: number): string {
-  if (distanceAu < 0.05) return `${Math.round(distanceKm).toLocaleString("it")} km`;
-  return `${distanceAu.toFixed(3)} UA · ${(distanceKm / 1_000_000).toFixed(1)} milioni km`;
+  if (distanceAu < 0.05) return `${Math.round(distanceKm).toLocaleString("en")} km`;
+  return `${distanceAu.toFixed(3)} AU · ${(distanceKm / 1_000_000).toFixed(1)} million km`;
 }
 
 function formatAngularDiameter(diameterDeg: number): string {
@@ -53,7 +53,7 @@ export function SolarDetail({ definition }: SolarDetailProps) {
     });
   }, [definition.id, snapshot, textures]);
 
-  if (!snapshot) return <p style={hint}>Corpo non disponibile a questa data.</p>;
+  if (!snapshot) return <p style={hint}>Object unavailable at this time.</p>;
 
   const center = () => {
     update({
@@ -63,7 +63,7 @@ export function SolarDetail({ definition }: SolarDetailProps) {
       selected: {
         kind: "solar",
         label: snapshot.label,
-        sub: `${definition.kind === "moon" ? "Satellite" : "Pianeta"} · magnitudine ${snapshot.magnitude.toFixed(1)}`,
+        sub: `${definition.kind === "moon" ? "Satellite" : "Planet"} · magnitude ${snapshot.magnitude.toFixed(1)}`,
         raHours: snapshot.raHours,
         decDeg: snapshot.decDeg,
         mag: snapshot.magnitude,
@@ -79,36 +79,36 @@ export function SolarDetail({ definition }: SolarDetailProps) {
         <canvas
           ref={previewRef}
           role="img"
-          aria-label={`${snapshot.label} con fase corrente`}
+          aria-label={`${snapshot.label} at its current phase`}
           style={{ width: 88, height: 88, flex: "0 0 auto", borderRadius: "50%", background: "rgba(255,255,255,0.03)" }}
         />
         <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
           <div style={{ fontWeight: 650, color: "#f8fafc", fontSize: 17 }}>{snapshot.label}</div>
           <div style={hint}>
-            {definition.kind === "moon" ? "Satellite naturale" : "Pianeta"} · {snapshot.englishName}
+            {definition.kind === "moon" ? "Natural satellite" : "Planet"} · {snapshot.englishName}
           </div>
-          <div style={hint}>Magnitudine {snapshot.magnitude.toFixed(1)}</div>
+          <div style={hint}>Magnitude {snapshot.magnitude.toFixed(1)}</div>
         </div>
       </div>
 
       {snapshot.altDeg < 0 && (
-        <p style={warning}>Sotto l'orizzonte di {Math.abs(snapshot.altDeg).toFixed(1)}°.</p>
+        <p style={warning}>Below the horizon by {Math.abs(snapshot.altDeg).toFixed(1)}°.</p>
       )}
 
       <dl style={grid}>
-        <dt style={term}>RA / Dec apparenti</dt>
+        <dt style={term}>Apparent RA / Dec</dt>
         <dd style={value}>{formatRa(snapshot.raHours)} · {formatDec(snapshot.decDeg)}</dd>
-        <dt style={term}>Altezza / Azimut</dt>
+        <dt style={term}>Altitude / Azimuth</dt>
         <dd style={value}>{snapshot.altDeg.toFixed(2)}° · {snapshot.azDeg.toFixed(2)}°</dd>
-        <dt style={term}>Distanza topocentrica</dt>
+        <dt style={term}>Topocentric distance</dt>
         <dd style={value}>{formatDistance(snapshot.distanceAu, snapshot.distanceKm)}</dd>
-        <dt style={term}>Diametro apparente</dt>
+        <dt style={term}>Apparent diameter</dt>
         <dd style={value}>{formatAngularDiameter(snapshot.angularDiameterDeg)}</dd>
-        <dt style={term}>Fase illuminata</dt>
+        <dt style={term}>Illuminated fraction</dt>
         <dd style={value}>{Math.round(snapshot.phaseFraction * 100)}%</dd>
         {snapshot.ringTiltDeg !== null && (
           <>
-            <dt style={term}>Inclinazione anelli</dt>
+            <dt style={term}>Ring tilt</dt>
             <dd style={value}>{snapshot.ringTiltDeg.toFixed(1)}°</dd>
           </>
         )}
@@ -116,16 +116,16 @@ export function SolarDetail({ definition }: SolarDetailProps) {
 
       <p style={hint}>
         {formatLatLon(observer.latDeg, observer.lonDegEast)} ·{" "}
-        {sky.observer.live ? "aggiornamento in tempo reale" : "data impostata"}
+        {sky.observer.live ? "Live" : "Fixed time"}
       </p>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={center} style={button}>Centra</button>
+        <button onClick={center} style={button}>Center</button>
         <button
           onClick={() => update({ showSolarSystem: !sky.showSolarSystem })}
           style={button}
         >
-          {sky.showSolarSystem ? "Nascondi nel cielo" : "Mostra nel cielo"}
+          {sky.showSolarSystem ? "Hide on map" : "Show on map"}
         </button>
       </div>
     </div>
