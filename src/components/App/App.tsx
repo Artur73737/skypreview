@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type PointerEvent } from "react";
 import { QualitySettings } from "../DisplayControls/QualitySettings";
 import { DisplayControls } from "../DisplayControls";
 import { Dock } from "../Dock";
@@ -24,10 +24,63 @@ function Layout() {
   const tool = panel ? TOOLS[panel] : null;
   const dialog = useRef<HTMLDialogElement>(null);
 
+  const drag = useRef<{ id: number; offsetX: number; offsetY: number } | null>(null);
+  const backdropPointer = useRef<number | null>(null);
+
+  const moveDialog = (left: number, top: number) => {
+    const element = dialog.current;
+    if (!element?.open) return;
+    const { width, height } = element.getBoundingClientRect();
+    const root = document.documentElement;
+    Object.assign(element.style, {
+      margin: "0",
+      right: "auto",
+      bottom: "auto",
+      left: `${Math.max(0, Math.min(left, root.clientWidth - width))}px`,
+      top: `${Math.max(0, Math.min(top, root.clientHeight - height))}px`,
+    });
+  };
+
+  const startDrag = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse" || event.button !== 0 ||
+        (event.target as Element).closest("button")) return;
+    const rect = dialog.current?.getBoundingClientRect();
+    if (!rect) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.current = { id: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
+  };
+
+  const outside = (event: PointerEvent<HTMLDialogElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return event.target === event.currentTarget &&
+      (event.clientX < rect.left || event.clientX >= rect.right ||
+       event.clientY < rect.top || event.clientY >= rect.bottom);
+  };
+
   useEffect(() => {
     const element = dialog.current;
     if (tool && element && !element.open) element.showModal();
-    if (!tool && element?.open) element.close();
+    if (!tool && element?.open) {
+      element.close();
+      element.removeAttribute("style");
+      drag.current = null;
+      backdropPointer.current = null;
+    }
+    if (!tool || !element) return;
+    const keepInView = () => {
+      if (element.style.left) {
+        const rect = element.getBoundingClientRect();
+        moveDialog(rect.left, rect.top);
+      }
+    };
+    const observer = new ResizeObserver(keepInView);
+    observer.observe(element);
+    window.addEventListener("resize", keepInView);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", keepInView);
+    };
   }, [tool]);
 
   return (
@@ -42,9 +95,27 @@ function Layout() {
       <dialog ref={dialog} className={`tool-dialog ${panel === "fov" ? "tool-dialog-wide" : ""}`}
         aria-labelledby="tool-title"
         onCancel={event => { event.preventDefault(); setPanel(null); }}
-        onClick={event => { if (event.target === event.currentTarget) setPanel(null); }}>
+        onPointerDown={event => {
+          if (event.isPrimary && event.button === 0)
+            backdropPointer.current = outside(event) ? event.pointerId : null;
+        }}
+        onPointerUp={event => {
+          if (backdropPointer.current !== event.pointerId) return;
+          backdropPointer.current = null;
+          if (outside(event)) setPanel(null);
+        }}
+        onPointerCancel={() => { backdropPointer.current = null; }}>
         {tool && <div className="dialog-content">
-          <header className="panel-head">
+          <header className="panel-head"
+            onPointerDown={startDrag}
+            onPointerMove={event => {
+              const active = drag.current;
+              if (active?.id === event.pointerId)
+                moveDialog(event.clientX - active.offsetX, event.clientY - active.offsetY);
+            }}
+            onLostPointerCapture={event => {
+              if (drag.current?.id === event.pointerId) drag.current = null;
+            }}>
             <h2 id="tool-title">{tool.title}</h2>
             <button onClick={() => setPanel(null)} aria-label="Close dialog">×</button>
           </header>
