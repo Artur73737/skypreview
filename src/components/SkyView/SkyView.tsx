@@ -9,7 +9,7 @@ import { useHipsBackground } from "../../hooks/useHipsBackground";
 import { useObserver } from "../../hooks/useObserver";
 import { useSolarSystem } from "../../hooks/useSolarSystem";
 import { useSolarTextures } from "../../hooks/useSolarTextures";
-import { useSkyStore } from "../../store/skyStore";
+import { useSkyStore, type SkyState } from "../../store/skyStore";
 import { SurveyBackground } from "./SurveyBackground";
 import { dsoColor, starColor, starRadius } from "./skyDraw";
 import { clampFov, fovForPinch } from "./pinch";
@@ -446,12 +446,27 @@ export function SkyView() {
     movedRef.current = false;
   };
 
+  const gestureFrame = useRef(0);
+  const gesturePatch = useRef<Partial<SkyState>>({});
+  const flushGesture = () => {
+    cancelAnimationFrame(gestureFrame.current);
+    gestureFrame.current = 0;
+    const patch = gesturePatch.current;
+    gesturePatch.current = {};
+    if (Object.keys(patch).length) update(patch);
+  };
+  const queueGesture = (patch: Partial<SkyState>) => {
+    Object.assign(gesturePatch.current, patch);
+    if (!gestureFrame.current) gestureFrame.current = requestAnimationFrame(flushGesture);
+  };
+  useEffect(() => () => cancelAnimationFrame(gestureFrame.current), []);
+
   const onPointerMove = (e: React.PointerEvent) => {
     const point = toLocal(e);
     if (pointersRef.current.has(e.pointerId)) pointersRef.current.set(e.pointerId, point);
     if (pinchRef.current) {
       if (pointersRef.current.size >= 2) {
-        update({
+        queueGesture({
           fovDeg: fovForPinch(
             pinchRef.current.startFov,
             pinchRef.current.startDistance,
@@ -469,7 +484,7 @@ export function SkyView() {
     if (dragRef.current.mode === "fov" && dragRef.current.fovId) {
       const ll = unprojectToAltAz(x, y, basis, sky.fovDeg, size.w, size.h);
       const eq = altAzToRaDec(ll.altDeg, ll.azDeg, observer.latDeg, observer.lonDegEast, observer.date);
-      update({
+      queueGesture({
         fovs: sky.fovs.map((f) =>
           f.id === dragRef.current.fovId ? { ...f, raHours: eq.raHours, decDeg: eq.decDeg } : f,
         ),
@@ -479,13 +494,14 @@ export function SkyView() {
     const cosA = Math.max(0.35, Math.cos((startRef.current.alt * Math.PI) / 180));
     const dAz = dx / focalPx / cosA / (Math.PI / 180);
     const dAlt = dy / focalPx / (Math.PI / 180);
-    update({
+    queueGesture({
       viewAzDeg: ((startRef.current.az - dAz) % 360 + 360) % 360,
       viewAltDeg: Math.max(-89.9, Math.min(89.9, startRef.current.alt + dAlt)),
     });
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
+    flushGesture();
     const point = pointersRef.current.get(e.pointerId) ?? toLocal(e);
     pointersRef.current.delete(e.pointerId);
     const wasPinch = pinchRef.current !== null;
@@ -557,6 +573,7 @@ export function SkyView() {
   };
 
   const onPointerCancel = (e: React.PointerEvent) => {
+    flushGesture();
     pointersRef.current.delete(e.pointerId);
     if (pointersRef.current.size < 2) pinchRef.current = null;
     dragRef.current = { mode: null, fovId: null };
@@ -565,7 +582,7 @@ export function SkyView() {
 
   const onWheel = (e: React.WheelEvent) => {
     const factor = e.deltaY > 0 ? 1.15 : 0.87;
-    update({ fovDeg: clampFov(sky.fovDeg * factor) });
+    queueGesture({ fovDeg: clampFov((gesturePatch.current.fovDeg ?? sky.fovDeg) * factor) });
   };
 
   return (

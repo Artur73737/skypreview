@@ -29,7 +29,16 @@ export interface HipsTileData {
 }
 
 const tileCache = new Map<string, HipsTileData>();
-const textureCache = new Map<string, HTMLCanvasElement>();
+type TextureCanvas = HTMLCanvasElement | OffscreenCanvas;
+const textureCache = new Map<string, TextureCanvas>();
+
+function makeCanvas(width: number, height: number): TextureCanvas {
+  if (typeof document === "undefined") return new OffscreenCanvas(width, height);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
 
 export function getHipsTileUrl(
   baseUrl: string,
@@ -57,9 +66,7 @@ function timeoutSignal(signal: AbortSignal | undefined): AbortSignal {
 async function decodeTile(blob: Blob): Promise<HipsTileData> {
   const bitmap = await createImageBitmap(blob);
   try {
-    const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
+    const canvas = makeCanvas(bitmap.width, bitmap.height);
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("Canvas 2D non disponibile");
     context.drawImage(bitmap, 0, 0);
@@ -217,7 +224,7 @@ export function renderHipsPixels(
 
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => {
-    if (typeof requestAnimationFrame === "function") {
+    if (typeof document !== "undefined" && typeof requestAnimationFrame === "function") {
       requestAnimationFrame(() => resolve());
     } else {
       setTimeout(resolve, 0);
@@ -225,7 +232,7 @@ function nextFrame(): Promise<void> {
   });
 }
 
-function cacheTexture(key: string, canvas: HTMLCanvasElement): void {
+function cacheTexture(key: string, canvas: TextureCanvas): void {
   textureCache.delete(key);
   textureCache.set(key, canvas);
   let bytes = [...textureCache.values()].reduce((sum, image) => sum + image.width * image.height * 4, 0);
@@ -242,11 +249,11 @@ function cacheTexture(key: string, canvas: HTMLCanvasElement): void {
  * Stitches DSS2 HiPS tiles into a square TAN texture. Sampling is chunked by
  * rows so a 2048 px view does not block the UI thread.
  */
-export async function loadHipsTexture(
+export async function composeHipsTexture(
   cutout: HipsCutout,
   signal?: AbortSignal,
   maxOrder = 9,
-): Promise<HTMLCanvasElement> {
+): Promise<TextureCanvas> {
   const order = Math.min(maxOrder, healpixTileOrder(cutout.fovDeg, cutout.sizePx));
   const key = `${cutout.key}|${order}`;
   const cached = textureCache.get(key);
@@ -271,9 +278,7 @@ export async function loadHipsTexture(
 
   if (tiles.size === 0) throw new Error("No DSS2 tiles loaded");
 
-  const canvas = document.createElement("canvas");
-  canvas.width = cutout.sizePx;
-  canvas.height = cutout.sizePx;
+  const canvas = makeCanvas(cutout.sizePx, cutout.sizePx);
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas 2D non disponibile");
 
