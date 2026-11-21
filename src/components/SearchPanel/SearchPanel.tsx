@@ -1,3 +1,4 @@
+import { solarFocusFov } from "../SkyView/solarLayer";
 import { useMemo, useState } from "react";
 import { raDecToAltAz } from "../../services/astroMath";
 import { searchCatalogs } from "../../services/catalog";
@@ -41,7 +42,7 @@ export function SearchPanel() {
                   update({
                     viewAltDeg: snapshot.altDeg,
                     viewAzDeg: snapshot.azDeg,
-                    fovDeg: snapshot.angularDiameterDeg * 8,
+                    fovDeg: solarFocusFov(snapshot),
                     selected: h,
                     activePanel: "object",
                   });

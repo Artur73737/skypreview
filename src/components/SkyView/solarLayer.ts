@@ -25,6 +25,10 @@ const LABEL_PRIORITY: SolarBodyId[] = [
   "io", "europa", "ganymede", "callisto",
 ];
 
+export function solarFocusFov(body: SolarBodySnapshot): number {
+  return body.id === "jupiter" ? 0.9 : body.angularDiameterDeg * 8;
+}
+
 export interface SolarCamera {
   basis: ViewBasis;
   fovDeg: number;
@@ -72,7 +76,7 @@ export function solarScreenGeometry(
   };
 }
 
-function sunScreenAngleRad(
+export function sunScreenAngleRad(
   body: SolarBodySnapshot,
   sun: SunSnapshot,
   basis: ViewBasis,

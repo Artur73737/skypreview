@@ -11,7 +11,7 @@ export function ObjectDetail() {
   const sel = sky.selected;
   const extent = sel?.kind === "dso" ? ((sel.ref as DsoEntry).sizeArcmin[0] ?? 20) / 60 : 0.5;
   const field = Math.max(0.25, extent * 1.5);
-  const photo = useHipsBackground(Boolean(sel && sel.kind !== "solar"), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field, 512);
+  const photo = useHipsBackground(Boolean(sel && sel.kind !== "solar"), (sel?.raHours ?? 0) * 15, sel?.decDeg ?? 0, field, 512, false);
   if (!sel) return <p style={hint}>Select an object on the map or use Search.</p>;
   if (sel.kind === "solar") return <SolarDetail definition={sel.ref} />;
   const raDeg = sel.raHours * 15;
@@ -52,7 +52,7 @@ function Photo({image,label}: {image: HTMLImageElement | HTMLCanvasElement; labe
   return <div className="object-preview">
     <canvas ref={ref} role="img" aria-label={`DSS2 of ${label}`}
       style={{ filter: `brightness(${2 ** exposure})` }} />
-    <label>Preview exposure <output>{exposure.toFixed(1)} EV</output>
+    <label>Preview brightness <output>{Math.round(100 * 2 ** exposure)}%</output>
       <input type="range" min={-3} max={0} step={0.1} value={exposure}
         onChange={event => setExposure(Number(event.target.value))} />
     </label>

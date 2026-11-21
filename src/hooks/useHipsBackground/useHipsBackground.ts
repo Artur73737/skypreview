@@ -21,6 +21,7 @@ export function useHipsBackground(
   decDeg: number,
   fovDeg: number,
   sizePx = 2048,
+  useLocalPack = true,
 ) {
   const [retry, setRetry] = useState(0);
   const [state, setState] = useState<HipsBackground>({
@@ -44,7 +45,7 @@ export function useHipsBackground(
         let img: HTMLImageElement | HTMLCanvasElement | null = null;
         let cutout = requested;
 
-        const local = await findLocalSkyCutout(requested);
+        const local = useLocalPack ? await findLocalSkyCutout(requested) : null;
         if (local) {
           try {
             img = await loadHipsImage(local, controller.signal);
@@ -79,6 +80,6 @@ export function useHipsBackground(
       clearTimeout(timer);
       controller.abort();
     };
-  }, [enabled, raDeg, decDeg, fovDeg, sizePx, retry]);
+  }, [enabled, raDeg, decDeg, fovDeg, sizePx, retry, useLocalPack]);
   return { ...state, retry: () => setRetry((n) => n + 1) };
 }

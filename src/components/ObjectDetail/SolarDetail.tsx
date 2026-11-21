@@ -1,3 +1,6 @@
+import { solarFocusFov, sunScreenAngleRad } from "../SkyView/solarLayer";
+import { basisForView } from "../../services/viewProjection";
+import { searchSolarBodies } from "../../services/solarSystem";
 import { useEffect, useRef } from "react";
 import { useObserver } from "../../hooks/useObserver";
 import { useSolarSystem } from "../../hooks/useSolarSystem";
@@ -46,12 +49,12 @@ export function SolarDetail({ definition }: SolarDetailProps) {
     const ring = definition.id === "saturn" ? snapshot.ringTiltDeg : null;
     drawTexturedBody(context, image, (size * dpr) / 2, (size * dpr) / 2, size * dpr * (ring == null ? 0.4 : 0.18), {
       phaseFraction: snapshot.phaseFraction,
-      sunAngleRad: 0,
+      sunAngleRad: sunScreenAngleRad(snapshot, solar.sun, basisForView(snapshot.altDeg, snapshot.azDeg)),
       opacity: 1,
       ringTiltDeg: ring,
       ringAlpha: textures.ringAlpha,
     });
-  }, [definition.id, snapshot, textures]);
+  }, [definition.id, snapshot, solar.sun, textures]);
 
   if (!snapshot) return <p style={hint}>Object unavailable at this time.</p>;
 
@@ -59,7 +62,8 @@ export function SolarDetail({ definition }: SolarDetailProps) {
     update({
       viewAltDeg: snapshot.altDeg,
       viewAzDeg: snapshot.azDeg,
-      fovDeg: snapshot.angularDiameterDeg * 8,
+      fovDeg: solarFocusFov(snapshot),
+      showSolarSystem: true,
       selected: {
         kind: "solar",
         label: snapshot.label,
@@ -69,7 +73,7 @@ export function SolarDetail({ definition }: SolarDetailProps) {
         mag: snapshot.magnitude,
         ref: definition,
       },
-      activePanel: "object",
+      activePanel: null,
     });
   };
 
@@ -95,6 +99,18 @@ export function SolarDetail({ definition }: SolarDetailProps) {
         <p style={warning}>Below the horizon by {Math.abs(snapshot.altDeg).toFixed(1)}°.</p>
       )}
 
+      {definition.id === "jupiter" && <section className="galilean-moons" aria-label="Galilean moons">
+        <strong>Galilean moons</strong>
+        <div>{solar.bodies.filter(body => body.definition.satellite).map(body => (
+          <button key={body.id} onClick={() => {
+            const selected = searchSolarBodies(body.label, solar).find(hit => hit.ref.id === body.id);
+            if (selected) update({ selected });
+          }}>
+            <img src={`${import.meta.env.BASE_URL}textures/solar-system/${body.definition.texture}`} alt="" />
+            {body.label}
+          </button>
+        ))}</div>
+      </section>}
       <dl style={grid}>
         <dt style={term}>Apparent RA / Dec</dt>
         <dd style={value}>{formatRa(snapshot.raHours)} · {formatDec(snapshot.decDeg)}</dd>
@@ -120,7 +136,7 @@ export function SolarDetail({ definition }: SolarDetailProps) {
       </p>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={center} style={button}>Center</button>
+        <button onClick={center} style={button}>Show on sky</button>
         <button
           onClick={() => update({ showSolarSystem: !sky.showSolarSystem })}
           style={button}

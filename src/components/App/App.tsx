@@ -46,7 +46,7 @@ function Layout() {
             <h2 id="tool-title">{tool.title}</h2>
             <button onClick={() => setPanel(null)} aria-label="Close dialog">×</button>
           </header>
-          <div className="panel-body"><tool.View /></div>
+          <div className="panel-body"><tool.View key={panel === "object" ? sky.selected?.label : panel} /></div>
         </div>}
       </dialog>
     </div>
